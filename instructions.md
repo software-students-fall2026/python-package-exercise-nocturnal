@@ -8,7 +8,7 @@ Your team works from a single shared GitHub repository.
 
 To create it, exactly one member of the team - decide among yourselves who - clicks the `Fork` button on this repository to make a copy of it in their own GitHub account. That member then gives the rest of the team access to it: in the new repository's `Settings` tab, under `Collaborators and teams`, add each teammate and the course admins by their GitHub usernames. Everyone else clones that one shared repository, rather than making further copies of their own.
 
-Post the web address of the team's repository in the team's Discord channel once it exists. That is how the work is submitted.
+Share the web address of the team's repository using the messaging app specified by your instructor, posting it wherever the instructor has directed. That is how the work is submitted.
 
 ## Concept
 
