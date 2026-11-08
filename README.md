@@ -1,3 +1,11 @@
+![Unit Tests](https://github.com/software-students-fall2026/python-package-exercise-nocturnal/actions/workflows/ci.yml/badge.svg?branch=main)
+
 # Python Package Exercise
 
-An exercise to create a Python package, build it, test it, distribute it, and use it. See [instructions](./instructions.md) for details.
+## Setup after cloning
+
+After cloning this repository, run `pipenv install --dev` from the main project directory. This creates the project's virtual environment and installs everything listed in the `Pipfile`:
+
+- `[dev-packages]` - tools needed only while developing the package, such as `pytest`, `coverage`, [build](https://packaging.python.org/en/latest/tutorials/packaging-projects/#generating-distribution-archives), and [twine](https://packaging.python.org/en/latest/key_projects/#twine). The `--dev` flag installs these too.
+
+Activating the virtual environment with `pipenv shell` does not install anything. If you skip `pipenv install --dev`, commands like `pytest` may silently run a copy installed elsewhere on your computer and fail with a `ModuleNotFoundError`.
