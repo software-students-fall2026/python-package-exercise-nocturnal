@@ -1,0 +1,12 @@
+[dev-packages]
+build = "*"
+pytest = "*"
+coverage = "*"
+pytest-cov = "*"
+twine = "*"
+
+[requires]
+python_version = "3"
+
+[packages]
+pynesthesia = {path = ".", editable = true}

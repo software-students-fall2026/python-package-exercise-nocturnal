@@ -1,0 +1,38 @@
+name: Unit Tests
+
+on:
+  push:
+  pull_request:
+    branches:
+      - main
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+
+    strategy:
+      matrix:
+        python-version: ["3.11", "3.12", "3.13", "3.14"]
+
+    steps:
+      - uses: actions/checkout@v5
+
+      - name: Install Python
+        uses: actions/setup-python@v6
+        with:
+          python-version: ${{ matrix.python-version }}
+
+      - name: Install pipenv and Pipfile packages
+        run: |
+          python -m pip install --upgrade pip pipenv
+          pipenv install --dev
+
+      - name: Turn on editable mode
+        run: pipenv install -e .
+
+      - name: Test with pytest & confirm 100% coverage
+        run: |
+          pipenv run python -m pytest \
+            --cov=pynesthesia \
+            --cov-report=term-missing \
+            --cov-fail-under=100
