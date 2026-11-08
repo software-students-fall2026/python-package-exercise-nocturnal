@@ -1,4 +1,4 @@
-![Unit Tests](https://github.com/software-students-fall2026/python-package-exercise-nocturnal/actions/workflows/ci.yml/badge.svg?branch=main)
+![CI](https://github.com/software-students-fall2026/python-package-exercise-nocturnal/actions/workflows/ci.yml/badge.svg?branch=main)
 
 # Python Package Exercise
 
