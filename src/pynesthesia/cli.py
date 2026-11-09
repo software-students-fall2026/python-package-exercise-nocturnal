@@ -1,19 +1,17 @@
 import argparse
 
-from .keygen import generate_file_hash
+import pynesthesia.keygen as keygen
 
 
-def main(argv=None):
+def hash_file(argv=None):
     # get file path
     parser = argparse.ArgumentParser(description="calculate the SHA-256 hash of a file.")
     parser.add_argument("path", help="path to the file to hash")
     args = parser.parse_args(argv)
 
     # hash file
-    digest = generate_file_hash(args.path)
-    if digest is None:
-        return 1
+    digest = keygen.generate_file_hash(args.path)
 
-    # print hash
-    print(digest)
-    return 0
+    # print hash if the file was read
+    if digest is not None:
+        print(digest)
