@@ -1,6 +1,6 @@
 import argparse
 
-import pynesthesia.keygen as keygen
+import pynesthesia.hashseed as hashseed
 
 
 def hash_file(argv=None):
@@ -10,7 +10,7 @@ def hash_file(argv=None):
     args = parser.parse_args(argv)
 
     # hash file
-    digest = keygen.generate_file_hash(args.path)
+    digest = hashseed.generate_file_hash(args.path)
 
     # print hash if the file was read
     if digest is not None:

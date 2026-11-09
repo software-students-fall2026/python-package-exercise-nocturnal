@@ -1,7 +1,7 @@
 import pytest
 import hashlib
 
-from pynesthesia.keygen import generate_file_hash
+from pynesthesia.hashseed import generate_file_hash
 
 def test_generate_file_hash_with_text_file(tmp_path):
     """simulate txt file"""
