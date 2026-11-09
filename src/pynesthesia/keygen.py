@@ -2,17 +2,9 @@ import sys
 import hashlib
 
 def generate_file_hash(filepath: str) -> str | None:
-    """Returns the SHA-256 cryptographic hash of a file.
+    """Return the file's SHA-256 hash, or None if it cannot be read.
 
-    Reads the file in binary mode using buffered chunks to handle large files 
-    efficiently without consuming too much system memory.
-
-    Args:
-        filepath (str): The system path to the file which needs hashing.
-
-    Returns:
-        str: The hexadecimal representation of the SHA-256 hash if successful.
-        None: If the file cannot be found, read, or opened due to an exception.
+    Reads the file in chunks to limit memory use.
     """
     buffer_size = 131072 # 128 KB buffer
     sha256 = hashlib.sha256()
