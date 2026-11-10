@@ -2,7 +2,7 @@ import argparse
 from pathlib import Path
 
 import pynesthesia.hashseed as hashseed
-import pynesthesia.keygen as keygen
+import pynesthesia.jingle as jingle
 
 
 def hash_file(path):
@@ -14,7 +14,7 @@ def hash_file(path):
 
 def jingle_from_seed(seed):
     # create the jingle without replacing an existing file
-    song = keygen.create_jingle(seed)
+    song = jingle.create_jingle(seed)
     output = Path.cwd() / "jingle.mid"
     with output.open("xb") as file:
         song.save(file=file)
