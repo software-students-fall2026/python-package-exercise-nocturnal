@@ -1,4 +1,3 @@
-import hashlib
 import os
 import subprocess
 import sys
@@ -20,78 +19,32 @@ def working_directory(tmp_path):
     os.chdir(previous)
 
 
-def test_cli_prints_file_hash(tmp_path, capsys):
-    """simulate hashing a text file"""
-    file = tmp_path / "random.txt"
-    random_bytes = b"random text file"
-
-    file.write_bytes(random_bytes)
-    expected_output = hashlib.sha256(random_bytes).hexdigest()
-
-    cli.hash_file(str(file))
-    assert capsys.readouterr().out.strip() == expected_output
-
-
-def test_cli_with_missing_file(tmp_path, capsys):
-    """simulate file not found error condition"""
-    filepath = tmp_path / "missing.txt"
-
-    cli.hash_file(str(filepath))
-    assert "Error processing file" in capsys.readouterr().out
-
-
 def test_cli_requires_a_path(capsys):
     """simulate missing file path"""
     # argparse exits when the required path is missing
     with pytest.raises(SystemExit) as exc:
-        cli.main([])
+        cli.main(["jingle"])
 
     # argparse uses exit code 2 for invalid arguments
     assert exc.value.code == 2
     assert "path" in capsys.readouterr().err
 
 
-def test_module_entry_point(tmp_path):
-    """simulate running the package"""
-    file = tmp_path / "random.txt"
-    random_bytes = b"random text file"
-
-    file.write_bytes(random_bytes)
-    expected_output = hashlib.sha256(random_bytes).hexdigest()
-    result = subprocess.run(
-        [sys.executable, "-m", "pynesthesia", str(file)],
-        capture_output=True,
-        text=True,
-    )
-
-    assert result.returncode == 0
-    assert result.stdout.strip() == expected_output
-
-
-def test_jingle_from_file_and_seed(working_directory, capsys):
-    """check that a file and its hash make the same jingle"""
+def test_jingle_from_file(working_directory, capsys):
+    """check that a file creates a jingle"""
     file = working_directory / "input.txt"
     file.write_bytes(b"hello")
-    seed = hashlib.sha256(b"hello").hexdigest()
     output = working_directory / "jingle.mid"
 
-    # create a jingle from the file
-    cli.main(["--file", str(file)])
-    first = output.read_bytes()
+    cli.main(["jingle", str(file)])
 
-    assert str(output) in capsys.readouterr().out
-
-    # remove the first file so the next command can save another
-    output.unlink()
-    cli.main(["--seed", seed])
-
-    assert output.read_bytes() == first
+    assert output.exists()
     assert str(output) in capsys.readouterr().out
 
 
 def test_jingle_with_missing_file(working_directory, capsys):
     """check that a missing file does not create a jingle"""
-    cli.main(["--file", str(working_directory / "missing.txt")])
+    cli.main(["jingle", str(working_directory / "missing.txt")])
 
     assert "Error processing file" in capsys.readouterr().out
     assert not (working_directory / "jingle.mid").exists()
@@ -99,12 +52,14 @@ def test_jingle_with_missing_file(working_directory, capsys):
 
 def test_jingle_does_not_replace_file(working_directory, capsys):
     """check that an existing jingle is not replaced"""
+    file = working_directory / "input.txt"
+    file.write_bytes(b"hello")
     output = working_directory / "jingle.mid"
     output.write_bytes(b"existing")
 
     # argparse exits when the output already exists
     with pytest.raises(SystemExit) as exc:
-        cli.main(["--seed", "00" * 32])
+        cli.main(["jingle", str(file)])
 
     # argparse uses exit code 2 and the original file stays unchanged
     assert exc.value.code == 2
@@ -112,25 +67,21 @@ def test_jingle_does_not_replace_file(working_directory, capsys):
     assert output.read_bytes() == b"existing"
 
 
-def test_invalid_inputs(capsys):
-    """check that invalid inputs show an error"""
-    inputs = [
-        (["--seed", "invalid"], "valid sha-256 hash"),
-        (["--file", "relative.txt"], "absolute file path"),
-        (["/some/file", "--seed", "00" * 32], "provide one file path"),
-    ]
+def test_relative_path(capsys):
+    """check that a relative path shows an error"""
+    # argparse uses exit code 2 for invalid input
+    with pytest.raises(SystemExit) as exc:
+        cli.main(["jingle", "relative.txt"])
 
-    for args, message in inputs:
-        # argparse uses exit code 2 for invalid input
-        with pytest.raises(SystemExit) as exc:
-            cli.main(args)
-
-        assert exc.value.code == 2
-        assert message in capsys.readouterr().err
+    assert exc.value.code == 2
+    assert "absolute file path" in capsys.readouterr().err
 
 
 def test_cannot_save_jingle(working_directory, capsys):
     """check that a save error is reported"""
+    file = working_directory / "input.txt"
+    file.write_bytes(b"hello")
+
     # remove the current directory so the file cannot be saved
     directory = working_directory / "removed"
     directory.mkdir()
@@ -138,7 +89,7 @@ def test_cannot_save_jingle(working_directory, capsys):
     directory.rmdir()
 
     with pytest.raises(SystemExit) as exc:
-        cli.main(["--seed", "00" * 32])
+        cli.main(["jingle", str(file)])
 
     # argparse uses exit code 2 when it reports an error
     assert exc.value.code == 2
@@ -152,7 +103,7 @@ def test_module_creates_jingle(tmp_path):
 
     # run the command in a temporary directory
     result = subprocess.run(
-        [sys.executable, "-m", "pynesthesia", "--file", str(file)],
+        [sys.executable, "-m", "pynesthesia", "jingle", str(file)],
         cwd=tmp_path,
         capture_output=True,
         text=True,

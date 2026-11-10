@@ -1,22 +1,27 @@
-import hashlib
+import os
 import runpy
 import sys
+from pathlib import Path
 
 
 def test_main_runs_cli(tmp_path, capsys):
     file = tmp_path / "input.txt"
     file.write_bytes(b"hello")
-    expected = hashlib.sha256(b"hello").hexdigest()
+    output = tmp_path / "jingle.mid"
 
     # give the package a file path as a command line argument
-    previous = sys.argv
+    previous_args = sys.argv
+    previous_directory = Path.cwd()
     try:
-        sys.argv = ["pynesthesia", str(file)]
+        os.chdir(tmp_path)
+        sys.argv = ["pynesthesia", "jingle", str(file)]
 
         # run the package as if it were started from the command line
         runpy.run_module("pynesthesia", run_name="__main__")
     finally:
-        # restore the original arguments after the test
-        sys.argv = previous
+        # restore the original arguments and directory after the test
+        sys.argv = previous_args
+        os.chdir(previous_directory)
 
-    assert capsys.readouterr().out.strip() == expected
+    assert output.exists()
+    assert str(output) in capsys.readouterr().out
