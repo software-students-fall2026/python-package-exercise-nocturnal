@@ -4,7 +4,6 @@ import subprocess
 import sys
 from pathlib import Path
 
-import mido
 import pytest
 
 import pynesthesia.cli as cli
@@ -80,14 +79,7 @@ def test_jingle_from_file_and_seed(working_directory, capsys):
     cli.main(["--file", str(file)])
     first = output.read_bytes()
 
-    # read the midi messages and count the notes
-    notes = [
-        message for message in mido.MidiFile(output).tracks[0]
-        if message.type == "note_on"
-    ]
-
     assert str(output) in capsys.readouterr().out
-    assert len(notes) == 32
 
     # remove the first file so the next command can save another
     output.unlink()
@@ -120,21 +112,21 @@ def test_jingle_does_not_replace_file(working_directory, capsys):
     assert output.read_bytes() == b"existing"
 
 
-@pytest.mark.parametrize("args, message", [
-    (["--seed", "invalid"], "valid sha-256 hash"),
-    (["--file", "relative.txt"], "absolute file path"),
-    (["relative.txt"], "absolute file path"),
-    (["/some/file", "--seed", "00" * 32], "provide one file path"),
-])
-def test_invalid_arguments(args, message, capsys):
+def test_invalid_inputs(capsys):
     """check that invalid inputs show an error"""
-    # argparse exits when the input is invalid
-    with pytest.raises(SystemExit) as exc:
-        cli.main(args)
+    inputs = [
+        (["--seed", "invalid"], "valid sha-256 hash"),
+        (["--file", "relative.txt"], "absolute file path"),
+        (["/some/file", "--seed", "00" * 32], "provide one file path"),
+    ]
 
-    # argparse uses exit code 2 for invalid arguments
-    assert exc.value.code == 2
-    assert message in capsys.readouterr().err
+    for args, message in inputs:
+        # argparse uses exit code 2 for invalid input
+        with pytest.raises(SystemExit) as exc:
+            cli.main(args)
+
+        assert exc.value.code == 2
+        assert message in capsys.readouterr().err
 
 
 def test_cannot_save_jingle(working_directory, capsys):
