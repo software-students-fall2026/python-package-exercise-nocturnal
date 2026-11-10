@@ -6,6 +6,7 @@ from pathlib import Path
 import pytest
 
 import pynesthesia.cli as cli
+import pynesthesia.colors as colors
 
 
 @pytest.fixture
@@ -115,3 +116,11 @@ def test_module_creates_jingle(tmp_path):
     assert result.returncode == 0
     assert output.exists()
     assert str(output) in result.stdout
+
+def test_cli_colorizes(capsys):
+    """check that --colorize actually prints colored text"""
+    cli.main(["--colorize", "0f"])
+    printed = capsys.readouterr().out.strip()
+    expected = colors.colorize("0f")
+    assert printed == expected
+
