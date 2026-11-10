@@ -1,56 +1,32 @@
-import pytest
 import hashlib
 
 from pynesthesia.hashseed import generate_file_hash
 
-def test_generate_file_hash_with_text_file(tmp_path):
-    """simulate txt file"""
-    file = tmp_path / "random.txt"
-    random_bytes = b"random text file"
 
-    file.write_bytes(random_bytes)
-    expected_output = hashlib.sha256(random_bytes).hexdigest()
+def test_known_file_hash(tmp_path):
+    """check a file against a known sha256 hash"""
+    test_file = tmp_path / "hello_bro.txt"
+    test_file.write_bytes(b"hello")
 
-    assert generate_file_hash(file) == expected_output
+    assert generate_file_hash(test_file) == "2cf24dba5fb0a30e26e83b2ac5b9e29e1b161e5c1fa7425e73043362938b9824"
 
-def test_generate_file_hash_with_empty_file(tmp_path):
-    """simulate empty file"""
-    file = tmp_path / "empty_file_yo.dat"
-    random_bytes = b""
 
-    file.write_bytes(random_bytes)
-    expected_output = hashlib.sha256(random_bytes).hexdigest()
+def test_generate_file_hash(tmp_path):
+    """check hashes for empty, small, and large files"""
+    test_files = [
+        ("empty_file_yo.dat", b""),
+        ("random.txt", b"random text file"),
+        ("exact_buffer.bin", b"A" * 131072),
+        ("really_large_file_bro.dat", b"B" * 350000),
+    ]
+    for file_name, file_contents in test_files:
+        test_file = tmp_path / file_name
+        test_file.write_bytes(file_contents)
 
-    assert generate_file_hash(file) == expected_output
+        assert generate_file_hash(test_file) == hashlib.sha256(file_contents).hexdigest()
 
-def test_generate_file_hash_with_exact_buffer_size(tmp_path):
-    """simulate file exactly matching the 128 KB buffer size"""
-    file = tmp_path / "exact_buffer.bin"
-    random_bytes = b"A" * 131072
 
-    file.write_bytes(random_bytes)
-    expected_output = hashlib.sha256(random_bytes).hexdigest()
-
-    assert generate_file_hash(file) == expected_output
-
-def test_generate_file_hash_with_multi_chunk_large_file(tmp_path):
-    """simulate large file with multiple chunks"""
-    file = tmp_path / "really_large_file_bro.dat"
-    random_bytes = b"B" * 350000
-
-    file.write_bytes(random_bytes)
-    expected_output = hashlib.sha256(random_bytes).hexdigest()
-
-    assert generate_file_hash(file) == expected_output
-
-def test_generate_file_hash_with_missing_file():
-    """simulate file not found error condition"""
-    filepath = "this_file_definitely_does_not_exist.xyz"
-
-    assert generate_file_hash(filepath) is None
-
-def test_generate_file_hash_with_permission_denied(tmp_path):
-    """simulate permission error condition by reading a directory path instead of a file"""
-    filepath = tmp_path
-
-    assert generate_file_hash(filepath) is None
+def test_generate_file_hash_with_invalid_path(tmp_path):
+    """check that missing files and directories cannot be hashed"""
+    for path in [tmp_path / "this_file_definitely_does_not_exist.xyz", tmp_path]:
+        assert generate_file_hash(path) is None

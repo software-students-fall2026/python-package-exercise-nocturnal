@@ -1,38 +1,35 @@
-import hashlib
-from io import BytesIO
-
-import pytest
 import pynesthesia.jingle as jingle
-
-
-def midi_bytes(song):
-    output = BytesIO()
-    song.save(file=output)
-    return output.getvalue()
+from pynesthesia.jingle import jingle_config
 
 
 def test_jingle_is_repeatable():
-    seed = hashlib.sha256(b"same file").hexdigest()
-    assert midi_bytes(jingle.create_jingle(seed)) == midi_bytes(jingle.create_jingle(seed))
+    """check that the same seed produces the same jingle"""
+    seed = "00" * 32
+    first_jingle = list(jingle.audio_blocks(seed, measures=2))
+    second_jingle = list(jingle.audio_blocks(seed, measures=2))
+
+    assert first_jingle == second_jingle
+    assert any(first_jingle[0])
 
 
 def test_different_hashes_make_different_jingles():
-    first = jingle.create_jingle("00" * 32)
-    second = jingle.create_jingle("01" * 32)
-    assert midi_bytes(first) != midi_bytes(second)
+    """check that changes throughout the hash affect the music"""
+    first = list(jingle.audio_blocks("00" * 32, measures=2))
+    second = list(jingle.audio_blocks("00" * 31 + "01", measures=2))
+
+    assert first != second
 
 
-def test_jingle_uses_all_hash_bytes():
-    song = jingle.create_jingle("00" * 31 + "01")
-    track = song.tracks[0]
-    assert track[0].type == "program_change"
-    assert track[0].program == 0
-    assert [message.note for message in track if message.type == "note_on"] == [60] * 31 + [63]
-    assert len([message for message in track if message.type == "note_off"]) == 32
+def test_measures_set_jingle_length():
+    """check that more measures make more music"""
+    blocks = list(jingle.audio_blocks("02" * 32, measures=3))
+
+    assert len(blocks) == 3
+    assert all(any(block) for block in blocks)
+    assert blocks[0] != blocks[1]
 
 
-def test_jingle_requires_a_sha256_hash():
-    with pytest.raises(ValueError):
-        jingle.create_jingle("00")
-    with pytest.raises(ValueError):
-        jingle.create_jingle("not hex")
+def test_rhythm_lengths():
+    """check that each rhythm fills its measure"""
+    for rhythm in jingle_config["rhythms"]:
+        assert sum(rhythm) == jingle_config["beatsPerMeasure"]
