@@ -5,9 +5,9 @@
 
 ## Install
 
-Our package is on PyPI at [pynesthesia](https://pypi.org/project/pynesthesia)
+Our package is on TestPyPI at [pynesthesia](https://test.pypi.org/project/pynesthesia)
 
-    pip install pynesthesia
+    pip install -i https://test.pypi.org/simple/ --extra-index-url https://pypi.org/simple/ pynesthesia 
 
 ## Team
 
