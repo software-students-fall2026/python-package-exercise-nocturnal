@@ -35,8 +35,10 @@ def test_card_elements():
         assert card["body"]
         assert card["page_color"] in htmlgen.BKG_COLORS
         assert card["card_color"] in htmlgen.BKG_COLORS
+        assert card["page_color"] != card["card_color"]
         assert card["heading_color"] in htmlgen.FONT_COLORS
         assert card["body_color"] in htmlgen.FONT_COLORS
+        assert card["heading_color"] != card["body_color"]
         assert card["font"] in htmlgen.FONTS
         assert card["corner_decoration"] in htmlgen.CORNER_DECORATIONS
         assert card["border_color"] in htmlgen.FONT_COLORS
@@ -59,3 +61,20 @@ def test_html_elements(tmp_path):
     for card in cards:
         assert card["header"] in page
         assert card["body"] in page
+
+def test_cards_adjust_matching_colors():
+    cards = htmlgen.generate_cards("00" * 32)
+
+    for card in cards:
+        assert card["card_color"] != card["page_color"]
+        assert card["body_color"] != card["heading_color"]
+
+def test_html_can_use_custom_filename(tmp_path):
+    # User can choose output html file name
+    cards = htmlgen.generate_cards("1234abcd" * 8)
+    output = tmp_path / "my_fortunes.html"
+
+    htmlgen.write_html(cards, output)
+
+    assert output.exists()
+    assert output.name == "my_fortunes.html"
