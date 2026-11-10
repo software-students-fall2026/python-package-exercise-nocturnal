@@ -1,0 +1,20 @@
+{
+  "sampleRate": 44100,
+  "measuresDefault": 8,
+  "measuresLimits": [1, 112],
+  "beatsPerMeasure": 4,
+  "tempos": [90, 110, 130, 150],
+  "waveforms": ["SINE_WAVE", "TRIANGLE_WAVE", "SQUARE_WAVE", "SAWTOOTH_WAVE"],
+  "attackTimes": [0.01, 0.04, 0.08],
+  "decayTimes": [0.08, 0.15, 0.25],
+  "vibratoAmounts": [0, 0, 4, 7],
+  "rootNotes": [60, 62, 64, 65, 67],
+  "scales": [
+    [0, 2, 4, 7, 9, 12],
+    [0, 3, 5, 7, 10, 12]
+  ],
+  "rhythms": [
+    [1, 1, 1, 1],
+    [1, 0.5, 0.5, 2]
+  ]
+}

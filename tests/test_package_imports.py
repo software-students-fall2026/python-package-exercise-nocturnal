@@ -1,4 +1,12 @@
-def test_package_imports():
-    import pynesthesia
+import subprocess
+import sys
 
-    assert pynesthesia.__name__ == "pynesthesia"
+
+def test_package_imports(tmp_path):
+    """check that the installed package imports outside the project"""
+    result = subprocess.run(
+        [sys.executable, "-c", "import pynesthesia"],
+        cwd=tmp_path, capture_output=True, text=True,
+    )
+
+    assert result.returncode == 0

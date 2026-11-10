@@ -1,73 +1,62 @@
 import argparse
 from pathlib import Path
 
-import pynesthesia.hashseed as hashseed
-import pynesthesia.keygen as keygen
+import pynesthesia.output as output_writer
 import pynesthesia.colors as colors
+import pynesthesia.hashseed as hashseed
+import pynesthesia.jingle as jingle
 
 
-def hash_file(path):
-    # print the hash if the file was read
-    digest = hashseed.generate_file_hash(path)
-    if digest is not None:
-        print(digest)
-
-
-def jingle_from_seed(seed):
-    # create the jingle without replacing an existing file
-    song = keygen.create_jingle(seed)
-    output = Path.cwd() / "jingle.mid"
-    with output.open("xb") as file:
-        song.save(file=file)
-    print(f"jingle saved to: {output}")
-
-
-def jingle_from_file(path):
-    # hash the file and turn the hash into a jingle
+def jingle_from_file(path, measures=jingle.jingle_config["measuresDefault"]):
+    """create an mp3 from a file"""
     seed = hashseed.generate_file_hash(path)
     if seed is not None:
-        jingle_from_seed(seed)
+        directory = Path.cwd() / "pynesthesia" / "jingles"
+        directory.mkdir(parents=True, exist_ok=True)
+
+        # add new options to the filename here
+        options = {"measures": measures}
+        option_names = "_".join(f"{name}-{value}" for name, value in options.items())
+        output = directory / f"{seed}_{option_names}.mp3"
+        output_writer.save_mp3(seed, output, **options)
+        print(f"jingle saved to: {output}")
 
 
-def colorize_text(text): 
-    # print text with a different color for each character
+def colorize_text(text):
+    """print each character in its color"""
     print(colors.colorize(text))
 
 
 def main(argv=None):
     # set up the command line options
-    parser = argparse.ArgumentParser(
-        description="hash a file or create a midi jingle from a file or hash.",
-        epilog="file paths must be absolute. jingles are saved as jingle.mid in the current directory.",
+    parser = argparse.ArgumentParser(description="create a jingle or color text")
+    parser.add_argument("--colorize", help="text to print in color")
+    commands = parser.add_subparsers(dest="command")
+    jingle_parser = commands.add_parser("jingle", help="create a jingle from a file")
+    jingle_parser.add_argument("path", help="absolute path to a file")
+
+    # limit the jingle to five minutes
+    minimum, maximum = jingle.jingle_config["measuresLimits"]
+    jingle_parser.add_argument(
+        "--measures", type=int, choices=range(minimum, maximum + 1),
+        default=jingle.jingle_config["measuresDefault"], metavar=f"{minimum}-{maximum}",
+        help="number of measures (default: %(default)s)",
     )
-    parser.add_argument("path", nargs="?", help="absolute path to a file to hash")
-    options = parser.add_mutually_exclusive_group()
-    options.add_argument("--file", help="absolute path to a file to turn into a jingle")
-    options.add_argument("--seed", help="sha-256 hash to turn into a jingle")
-    options.add_argument("--colorize", help="text to print in color")
+
     args = parser.parse_args(argv)
+    if args.colorize is not None:
+        if args.command is not None:
+            parser.error("choose either colorize or jingle")
+        colorize_text(args.colorize)
+        return
 
-    # check that one input was provided
-    if sum(value is not None for value in (args.path, args.file, args.seed, args.colorize)) != 1:
-        parser.error("provide one file path, --file, --seed, or --colorize")
+    if args.command is None:
+        parser.error("choose jingle or --colorize")
 
-    path = args.path or args.file
-    if path is not None and not Path(path).is_absolute():
+    if not Path(args.path).is_absolute():
         parser.error("provide an absolute file path")
 
-    # run the requested command
     try:
-        if args.file is not None:
-            jingle_from_file(args.file)
-        elif args.seed is not None:
-            jingle_from_seed(args.seed)
-        elif args.colorize is not None:
-            colorize_text(args.colorize)
-        else:
-            hash_file(args.path)
-    except ValueError:
-        parser.error("provide a valid sha-256 hash")
-    except FileExistsError:
-        parser.error("jingle.mid already exists in the current directory")
+        jingle_from_file(args.path, args.measures)
     except OSError as error:
         parser.error(f"could not save jingle: {error}")
