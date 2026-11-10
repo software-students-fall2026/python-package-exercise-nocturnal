@@ -3,6 +3,7 @@ build = "*"
 pytest = "*"
 coverage = "*"
 pytest-cov = "*"
+twine = "*"
 
 [requires]
 python_version = "3"
