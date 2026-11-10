@@ -3,6 +3,20 @@
 
 # Python Package Exercise
 
+## Install
+
+Our package is on PyPI at [pynesthesia](https://pypi.org/project/pynesthesia)
+
+    pip install pynesthesia
+
+## Team
+
+- [Christina Lin](https://github.com/christinalin06)
+- [Daniel Zhang](https://github.com/danielzhang04)
+- [Jason Wang](https://github.com/TirpitzS128)
+- [Rishi Ajoykumar](https://github.com/ajoykumarrishi)
+- [Matthew Chen](https://github.com/23matthewc)
+
 ## Setup after cloning
 
 After cloning this repository, run `pipenv install --dev` from the main project directory. This creates the project's virtual environment and installs everything listed in the `Pipfile`:
