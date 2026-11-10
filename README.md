@@ -12,5 +12,4 @@ After cloning this repository, run `pipenv install --dev` from the main project 
 Activating the virtual environment with `pipenv shell` does not install anything. If you skip `pipenv install --dev`, commands like `pytest` may silently run a copy installed elsewhere on your computer and fail with a `ModuleNotFoundError`.
 
 ## CD
-When code is merged into main, the CD pipeline automatically runs the tests, sets the version number based on the date, 
-builds the package and checks it with twine, and uploads it to TestPyPI with twine. 
+When code is merged into main and CI passes, the CD pipeline sets the version number based on the date, builds the package and checks it with twine, and uploads it to TestPyPI.
