@@ -3,6 +3,7 @@ from pathlib import Path
 
 import pynesthesia.hashseed as hashseed
 import pynesthesia.keygen as keygen
+import pynesthesia.colors as colors
 
 
 def hash_file(path):
@@ -28,6 +29,11 @@ def jingle_from_file(path):
         jingle_from_seed(seed)
 
 
+def colorize_text(text): 
+    # print text with a different color for each character
+    print(colors.colorize(text))
+
+
 def main(argv=None):
     # set up the command line options
     parser = argparse.ArgumentParser(
@@ -38,11 +44,12 @@ def main(argv=None):
     options = parser.add_mutually_exclusive_group()
     options.add_argument("--file", help="absolute path to a file to turn into a jingle")
     options.add_argument("--seed", help="sha-256 hash to turn into a jingle")
+    options.add_argument("--colorize", help="text to print in color")
     args = parser.parse_args(argv)
 
     # check that one input was provided
-    if sum(value is not None for value in (args.path, args.file, args.seed)) != 1:
-        parser.error("provide one file path, --file, or --seed")
+    if sum(value is not None for value in (args.path, args.file, args.seed, args.colorize)) != 1:
+        parser.error("provide one file path, --file, --seed, or --colorize")
 
     path = args.path or args.file
     if path is not None and not Path(path).is_absolute():
@@ -54,6 +61,8 @@ def main(argv=None):
             jingle_from_file(args.file)
         elif args.seed is not None:
             jingle_from_seed(args.seed)
+        elif args.colorize is not None:
+            colorize_text(args.colorize)
         else:
             hash_file(args.path)
     except ValueError:
