@@ -8,6 +8,7 @@ version = "0.1.0"
 description = "A Python package developed by Team Nocturnal."
 readme = "README.md"
 requires-python = ">=3.11"
+dependencies = ["mido"]
 authors = [
     { name = "Christina Lin" },
     { name = "Daniel Zhang" },
@@ -22,7 +23,7 @@ classifiers = [
 ]
 
 [project.optional-dependencies]
-dev = ["pytest", "pytest-cov"]
+dev = ["build", "pytest", "coverage", "pytest-cov"]
 
 [project.urls]
 Repository = "https://github.com/software-students-fall2026/python-package-exercise-nocturnal"

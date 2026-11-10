@@ -1,29 +1,28 @@
-import sys
-import hashlib
+import mido
 
-def generate_file_hash(filepath: str) -> str | None:
-    """Return the file's SHA-256 hash, or None if it cannot be read.
 
-    Reads the file in chunks to limit memory use.
-    """
-    buffer_size = 131072 # 128 KB buffer
-    sha256 = hashlib.sha256()
+def create_jingle(seed_hash: str) -> mido.MidiFile:
+    """turn a sha-256 hash into a short piano melody"""
+    seed = bytes.fromhex(seed_hash)
+    if len(seed) != 32:
+        raise ValueError("expected a sha-256 hash")
 
-    try:
-        # open file in binary mode to read raw bytes
-        with open(filepath, 'rb') as file:
-            while True:
-                chunk = file.read(buffer_size)
+    # use notes from a fixed scale
+    scale = [60, 63, 65, 67, 70, 72, 75, 77]
 
-                # file end reached when chunk is empty
-                if not chunk:
-                    break
+    # create a midi file with one track
+    song = mido.MidiFile(type=0)
+    track = mido.MidiTrack()
+    song.tracks.append(track)
 
-                # chunk fed into hash state
-                sha256.update(chunk)
+    # use the piano instrument
+    track.append(mido.Message("program_change", program=0))
 
-        return sha256.hexdigest()
-    
-    except Exception as e:
-        print(f"Error processing file: {e}")
-        return None
+    # choose one note for each byte in the hash
+    for value in seed:
+        note = scale[value % len(scale)]
+        # start the note, then stop it after one beat
+        track.append(mido.Message("note_on", note=note, velocity=64))
+        track.append(mido.Message("note_off", note=note, time=song.ticks_per_beat))
+
+    return song

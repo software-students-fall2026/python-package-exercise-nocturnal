@@ -1,56 +1,38 @@
-import pytest
 import hashlib
+from io import BytesIO
 
-from pynesthesia.keygen import generate_file_hash
+import pytest
+import pynesthesia.keygen as keygen
 
-def test_generate_file_hash_with_text_file(tmp_path):
-    """simulate txt file"""
-    file = tmp_path / "random.txt"
-    random_bytes = b"random text file"
 
-    file.write_bytes(random_bytes)
-    expected_output = hashlib.sha256(random_bytes).hexdigest()
+def midi_bytes(song):
+    output = BytesIO()
+    song.save(file=output)
+    return output.getvalue()
 
-    assert generate_file_hash(file) == expected_output
 
-def test_generate_file_hash_with_empty_file(tmp_path):
-    """simulate empty file"""
-    file = tmp_path / "empty_file_yo.dat"
-    random_bytes = b""
+def test_jingle_is_repeatable():
+    seed = hashlib.sha256(b"same file").hexdigest()
+    assert midi_bytes(keygen.create_jingle(seed)) == midi_bytes(keygen.create_jingle(seed))
 
-    file.write_bytes(random_bytes)
-    expected_output = hashlib.sha256(random_bytes).hexdigest()
 
-    assert generate_file_hash(file) == expected_output
+def test_different_hashes_make_different_jingles():
+    first = keygen.create_jingle("00" * 32)
+    second = keygen.create_jingle("01" * 32)
+    assert midi_bytes(first) != midi_bytes(second)
 
-def test_generate_file_hash_with_exact_buffer_size(tmp_path):
-    """simulate file exactly matching the 128 KB buffer size"""
-    file = tmp_path / "exact_buffer.bin"
-    random_bytes = b"A" * 131072
 
-    file.write_bytes(random_bytes)
-    expected_output = hashlib.sha256(random_bytes).hexdigest()
+def test_jingle_uses_all_hash_bytes():
+    song = keygen.create_jingle("00" * 31 + "01")
+    track = song.tracks[0]
+    assert track[0].type == "program_change"
+    assert track[0].program == 0
+    assert [message.note for message in track if message.type == "note_on"] == [60] * 31 + [63]
+    assert len([message for message in track if message.type == "note_off"]) == 32
 
-    assert generate_file_hash(file) == expected_output
 
-def test_generate_file_hash_with_multi_chunk_large_file(tmp_path):
-    """simulate large file with multiple chunks"""
-    file = tmp_path / "really_large_file_bro.dat"
-    random_bytes = b"B" * 350000
-
-    file.write_bytes(random_bytes)
-    expected_output = hashlib.sha256(random_bytes).hexdigest()
-
-    assert generate_file_hash(file) == expected_output
-
-def test_generate_file_hash_with_missing_file():
-    """simulate file not found error condition"""
-    filepath = "this_file_definitely_does_not_exist.xyz"
-
-    assert generate_file_hash(filepath) is None
-
-def test_generate_file_hash_with_permission_denied(tmp_path):
-    """simulate permission error condition by reading a directory path instead of a file"""
-    filepath = tmp_path
-
-    assert generate_file_hash(filepath) is None
+def test_jingle_requires_a_sha256_hash():
+    with pytest.raises(ValueError):
+        keygen.create_jingle("00")
+    with pytest.raises(ValueError):
+        keygen.create_jingle("not hex")
