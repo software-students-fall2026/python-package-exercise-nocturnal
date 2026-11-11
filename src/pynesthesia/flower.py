@@ -97,7 +97,7 @@ def choose_flower(seed_hash: str):
     # species determined by first byte, art style determined by fifth byte of seed_hash
     return species_names[seed[0] % len(species_names)], art_styles[seed[4] % len(art_styles)]
 
-# one canvas size 400 x 400
+# set one canvas size 400 x 400
 canvas = 400
 # referenced https://developer.mozilla.org/en-US/docs/Web/SVG/Tutorials
 def render_flower_svg(seed_hash: str)-> str:
@@ -110,7 +110,7 @@ def render_flower_svg(seed_hash: str)-> str:
     name, style = choose_flower(seed_hash)
 
     # get details for flower and art style
-    flower = Species[name]
+    flowername = Species[name]
     art = Styles[style]
 
     # hue (0-359) of color wheel, determined by second byte, hsl(hue, saturation%, lightness%) referenced from https://www.w3schools.com/html/html_colors_hsl.asp
@@ -131,17 +131,17 @@ def render_flower_svg(seed_hash: str)-> str:
         outline_stroke = art["stroke"]
 
     middle = canvas / 2
-    petals = flower["petals"]
+    petals = flowername["petals"]
 
     #start svg
     svg = f'<svg width="{canvas}" height= "{canvas}" xmlns="http://www.w3.org/2000/svg">'
     svg += f'<title>{name} in artstyle: {style}</title>'
 
     #background
-    svg += f'<react x="0" y="0" width="{canvas}" height="{canvas}" style="fill: {art["background"]};"/>'
+    svg += f'<rect x="0" y="0" width="{canvas}" height="{canvas}" style="fill: {art["background"]};"/>'
 
     # for each layer
-    for layer in range(flower["layers"]):
+    for layer in range(flowername["layers"]):
         if layer == 0: 
             color = petal_color
         else:
@@ -154,10 +154,11 @@ def render_flower_svg(seed_hash: str)-> str:
         for petal in range(petals):
             # petals are spread evenly 360 degrees
             angle = petal * 360 / petals + rotate
-            svg += f'<ecllipse cx="0" cy="0" rx="{flower["rx"]}" ry="{flower["ry"]} style="fill: {color}; stroke: {outline_stroke};" fill-opacity="{art["opacity"]}" stroke-width="{art["stroke-width"]}" transform="translate({middle}, {middle}) rotate({angle})"/>'
+            svg += f'<ellipse cx="0" cy="-{flowername["ry"]}" rx="{flowername["rx"]}" ry="{flowername["ry"]} style="fill: {color}; stroke: {outline_stroke};" fill-opacity="{art["opacity"]}" stroke-width="{art["stroke_width"]}" transform="translate({middle}, {middle}) rotate({angle})"/>'
 
     # the pistil (middle of flowers)
-    svg += f'<circle cx="{middle}" cy="{middle}" r="{middle}" style="fill: {center_color}; stroke: {outline_stroke};" fill-opacity="{art["opacity"]}" stroke-width="{art["stroke-width"]}"/>'
+    svg += f'<circle cx="{middle}" cy="{middle}" r="{flowername["center"]}" style="fill: {center_color}; stroke: {outline_stroke};" fill-opacity="{art["opacity"]}" stroke-width="{art["stroke_width"]}"/>'
     # close svg
     svg += "</svg>"
+    return svg
 
