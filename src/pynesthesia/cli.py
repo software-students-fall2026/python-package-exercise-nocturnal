@@ -51,10 +51,11 @@ def flower_from_file(path):
     """Create an SVG flower picture from a file"""
     seed = hashseed.generate_file_hash(path)
     if seed is not None:
+        species, style = flower.choose_flower(seed)
         directory = Path.cwd() / "pynesthesia_output" / "flower"
         directory.mkdir(parents=True, exist_ok=True)
     
-        output = directory / f"{seed}.svg"
+        output = directory / f"{species}_{style}_{seed[:12]}.svg"
         flower.svg_to_file(seed, output)
         print(f"SVG saved to: {output}")
 
@@ -78,7 +79,7 @@ def main(argv=None):
     # set up the command line options
     parser = argparse.ArgumentParser(description="create a jingle or color text")
     parser.add_argument("--colorize", help="text to print in color")
-    commands = parser.add_subparsers(dest="command")\
+    commands = parser.add_subparsers(dest="command")
 
     jingle_parser = commands.add_parser("jingle", help="create a jingle from a file")
     jingle_parser.add_argument("path", help="absolute path to a file")
