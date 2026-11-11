@@ -6,6 +6,7 @@ import pynesthesia.colors as colors
 import pynesthesia.hashseed as hashseed
 import pynesthesia.jingle as jingle
 import pynesthesia.htmlgen as htmlgen
+import pynesthesia.chiptune as chiptune
 
 def jingle_from_file(path, measures=jingle.jingle_config["measuresDefault"]):
     """create an mp3 from a file"""
@@ -33,6 +34,18 @@ def html_from_file(path):
         htmlgen.write_html(cards, output)
         print(f"HTML page saved to: {output}")
 
+def chiptune_from_file(path, bars=4, wave="square"):
+    """create a wav chiptune from a file"""
+    seed = hashseed.generate_file_hash(path)
+    if seed is not None:
+        directory = Path.cwd() / "pynesthesia" / "chiptunes"
+        directory.mkdir(parents=True, exist_ok=True)
+
+        # the options are part of the filename, the same way the jingle does it
+        output = directory / f"{seed}_bars-{bars}_wave-{wave}.wav"
+        output.write_bytes(chiptune.create_chiptune(seed, bars=bars, wave_type=wave))
+        print(f"chiptune saved to: {output}")
+
 def colorize_text(text):
     """print each character in its color"""
     print(colors.colorize(text))
@@ -43,12 +56,15 @@ def run_jingle(args):
 def run_html(args):
     html_from_file(args.path)
 
+def run_chiptune(args):
+    chiptune_from_file(args.path, args.bars, args.wave)
+
 def main(argv=None):
     # set up the command line options
     parser = argparse.ArgumentParser(description="create a jingle or color text")
     parser.add_argument("--colorize", help="text to print in color")
     commands = parser.add_subparsers(dest="command")\
-    
+
     jingle_parser = commands.add_parser("jingle", help="create a jingle from a file")
     jingle_parser.add_argument("path", help="absolute path to a file")
     jingle_parser.set_defaults(handler = run_jingle)
@@ -56,6 +72,18 @@ def main(argv=None):
     html_parser = commands.add_parser("html", help="Create a html fortune page from a file")
     html_parser.add_argument("path", help="Absolute path to a file")
     html_parser.set_defaults(handler = run_html)
+
+    chiptune_parser = commands.add_parser("chiptune", help="create a chiptune wav from a file")
+    chiptune_parser.add_argument("path", help="absolute path to a file")
+    chiptune_parser.add_argument(
+        "--bars", type=int, choices=range(1, 33), default=4, metavar="1-32",
+        help="length in bars (default: %(default)s)",
+    )
+    chiptune_parser.add_argument(
+        "--wave", choices=chiptune.WAVES, default="square",
+        help="melody sound (default: %(default)s)",
+    )
+    chiptune_parser.set_defaults(handler = run_chiptune)
 
     # limit the jingle to five minutes
     minimum, maximum = jingle.jingle_config["measuresLimits"]
