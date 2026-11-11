@@ -59,6 +59,18 @@ chiptune.save_chiptune(seed, "chiptune.wav", bars=8, wave_type="saw")
 # Refuses to replace a file that already exists (raises FileExistsError).
 ```
 
+**8-BIT**
+```python
+from pynesthesia import retro8bit
+
+wav_bytes = retro8bit.create_retro(seed, bpm=150, bars=4, wave_type="pulse25")
+# Turn a SHA-256 hash (64 hex characters) into 8-bit WAV bytes. Same hash -> same tune.
+
+retro8bit.save_retro(seed, "retro.wav", bars=8, wave_type="pulse12")
+# Create the 8-bit tune and write it to `path` as a .wav file.
+# Refuses to replace a file that already exists (raises FileExistsError).
+```
+
 **Fortune cards**
 ```python
 from pynesthesia import htmlgen
