@@ -5,7 +5,6 @@ import pynesthesia.hashseed as hashseed
 import pynesthesia.keygen as keygen
 import pynesthesia.colors as colors
 
-
 def hash_file(path):
     # print the hash if the file was read
     digest = hashseed.generate_file_hash(path)
