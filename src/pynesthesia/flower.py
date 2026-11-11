@@ -49,19 +49,10 @@ Styles = {
 species_names = list(Species)
 art_styles = list(Styles)
 
-def choose_species(seed_hash: str) -> str:
+def choose_flower(seed_hash: str):
     """turn a sha-256 hash into name of flower species"""
     seed = bytes.fromhex(seed_hash)
     if len(seed) != 32:
         raise ValueError("expected a sha-256 hash")
-    # species determined by first byte of seed_hash
-    return species_names[seed[0] % len(species_names)]
-
-
-def choose_styles(seed_hash: str) -> str:
-    """turn a sha-256 hash into name of flower species"""
-    seed = bytes.fromhex(seed_hash)
-    if len(seed) != 32:
-        raise ValueError("expected a sha-256 hash")
-    # art style determined by fifth byte of seed_hash
-    return art_styles[seed[4] % len(art_styles)]
+    # species determined by first byte, art style determined by fifth byte of seed_hash
+    return species_names[seed[0] % len(species_names)], art_styles[seed[4] % len(art_styles)]
