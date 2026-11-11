@@ -12,7 +12,7 @@ def jingle_from_file(path, measures=jingle.jingle_config["measuresDefault"]):
     """create an mp3 from a file"""
     seed = hashseed.generate_file_hash(path)
     if seed is not None:
-        directory = Path.cwd() / "pynesthesia" / "jingles"
+        directory = Path.cwd() / "pynesthesia_output" / "jingles"
         directory.mkdir(parents=True, exist_ok=True)
 
         # add new options to the filename here
@@ -27,7 +27,7 @@ def html_from_file(path):
     seed = hashseed.generate_file_hash(path)
     if seed is not None:
         cards = htmlgen.generate_cards(seed)
-        directory = Path.cwd() / "pynesthesia" / "fortunes"
+        directory = Path.cwd() / "pynesthesia_output" / "fortunes"
         directory.mkdir(parents=True, exist_ok=True)
 
         output = directory / f"{seed[:12]}.html"
@@ -38,7 +38,7 @@ def chiptune_from_file(path, bars=4, wave="square"):
     """create a wav chiptune from a file"""
     seed = hashseed.generate_file_hash(path)
     if seed is not None:
-        directory = Path.cwd() / "pynesthesia" / "chiptunes"
+        directory = Path.cwd() / "pynesthesia_output" / "chiptunes"
         directory.mkdir(parents=True, exist_ok=True)
 
         # the options are part of the filename, the same way the jingle does it
