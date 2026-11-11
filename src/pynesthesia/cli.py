@@ -11,7 +11,7 @@ def jingle_from_file(path, measures=jingle.jingle_config["measuresDefault"]):
     """create an mp3 from a file"""
     seed = hashseed.generate_file_hash(path)
     if seed is not None:
-        directory = Path.cwd() / "pynesthesia" / "jingles"
+        directory = Path.cwd() / "jingles"
         directory.mkdir(parents=True, exist_ok=True)
 
         # add new options to the filename here

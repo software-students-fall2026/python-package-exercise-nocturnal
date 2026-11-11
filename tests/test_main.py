@@ -8,7 +8,7 @@ def test_main_runs_cli(tmp_path, capsys):
     """check that the package starts the command line"""
     file = tmp_path / "input.txt"
     file.write_bytes(b"hello")
-    output_directory = tmp_path / "pynesthesia" / "jingles"
+    output_directory = tmp_path / "jingles"
 
     # pass a file path to the package
     previous_args = sys.argv

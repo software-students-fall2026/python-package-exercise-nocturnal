@@ -23,7 +23,7 @@ def test_jingle_from_file(working_directory, capsys):
     file = working_directory / "little_file_bro.txt"
     file.write_bytes(b"hello")
     cli.main(["jingle", str(file), "--measures", "1"])
-    outputs = list((working_directory / "pynesthesia" / "jingles").glob("*.mp3"))
+    outputs = list((working_directory / "jingles").glob("*.mp3"))
 
     assert len(outputs) == 1
     assert outputs[0].stat().st_size > 0
@@ -37,7 +37,7 @@ def test_jingle_is_repeatable(working_directory):
     file.write_bytes(b"hello")
     options = ["--measures", "1"]
     cli.main(["jingle", str(file), *options])
-    directory = working_directory / "pynesthesia" / "jingles"
+    directory = working_directory / "jingles"
     output = next(directory.glob("*.mp3"))
     first_audio = output.read_bytes()
 
