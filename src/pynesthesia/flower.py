@@ -156,7 +156,7 @@ def render_flower_svg(seed_hash: str)-> str:
         for petal in range(petals):
             # petals are spread evenly 360 degrees
             angle = petal * 360 / petals + rotate
-            svg += f'<ellipse cx="0" cy="-{flowername["ry"]}" rx="{flowername["rx"]}" ry="{flowername["ry"]} style="fill: {color}; stroke: {outline_stroke};" fill-opacity="{art["opacity"]}" stroke-width="{art["stroke_width"]}" transform="translate({middle}, {middle}) rotate({angle})"/>'
+            svg += f'<ellipse cx="0" cy="-{flowername["ry"]}" rx="{flowername["rx"]}" ry="{flowername["ry"]}" style="fill: {color}; stroke: {outline_stroke};" fill-opacity="{art["opacity"]}" stroke-width="{art["stroke_width"]}" transform="translate({middle}, {middle}) rotate({angle})"/>'
 
     # the pistil (middle of flowers)
     svg += f'<circle cx="{middle}" cy="{middle}" r="{flowername["center"]}" style="fill: {center_color}; stroke: {outline_stroke};" fill-opacity="{art["opacity"]}" stroke-width="{art["stroke_width"]}"/>'
