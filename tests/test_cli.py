@@ -61,7 +61,7 @@ def test_invalid_commands(tmp_path):
         [], ["jingle"], ["jingle", "relative.txt"],
         ["jingle", file, "--measures", "0"],
         ["jingle", file, "--measures", "113"],
-        ["--colorize", "0f", "jingle", file],
+        ["colorize"],
         ["html"],
         ["html", "relative.txt"],
         ["flower"],
@@ -154,7 +154,7 @@ def test_html_with_missing_file(working_directory, capsys):
 
 def test_cli_colorizes(capsys):
     """check that colorize prints colored text"""
-    cli.main(["--colorize", "0f"])
+    cli.main(["colorize", "0f"])
 
     assert capsys.readouterr().out.strip() == colors.colorize("0f")
 

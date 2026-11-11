@@ -75,10 +75,12 @@ def run_chiptune(args):
 def run_flower(args):
     flower_from_file(args.path)
 
+def run_colorize(args):
+    colorize_text(args.text)
+
 def main(argv=None):
     # set up the command line options
-    parser = argparse.ArgumentParser(description="create a jingle or color text")
-    parser.add_argument("--colorize", help="text to print in color")
+    parser = argparse.ArgumentParser(description="create a jingle, chiptune, flower, fortune page, or colored text")
     commands = parser.add_subparsers(dest="command")
 
     jingle_parser = commands.add_parser("jingle", help="create a jingle from a file")
@@ -105,6 +107,10 @@ def main(argv=None):
     flower_parser.add_argument("path", help="absolute path to a file")
     flower_parser.set_defaults(handler= run_flower)
 
+    colorize_parser = commands.add_parser("colorize", help="print text in color")
+    colorize_parser.add_argument("text", help="text to print in color")
+    colorize_parser.set_defaults(handler = run_colorize)
+
     # limit the jingle to five minutes
     minimum, maximum = jingle.jingle_config["measuresLimits"]
     jingle_parser.add_argument(
@@ -115,14 +121,8 @@ def main(argv=None):
 
     args = parser.parse_args(argv)
 
-    if args.colorize is not None:
-        if args.command is not None:
-            parser.error("choose either --colorize or a command")
-        colorize_text(args.colorize)
-        return
-
-    if args.command is None:
-        parser.error("choose a command or --colorize")
+    if not hasattr(args, "handler"):
+        parser.error("choose a command")
 
     if hasattr(args, "path") and not Path(args.path).is_absolute():
         parser.error("provide an absolute file path")
