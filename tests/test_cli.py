@@ -23,7 +23,7 @@ def test_jingle_from_file(working_directory, capsys):
     file = working_directory / "little_file_bro.txt"
     file.write_bytes(b"hello")
     cli.main(["jingle", str(file), "--measures", "1"])
-    outputs = list((working_directory / "pynesthesia" / "jingles").glob("*.mp3"))
+    outputs = list((working_directory / "pynesthesia_output" / "jingles").glob("*.mp3"))
 
     assert len(outputs) == 1
     assert outputs[0].stat().st_size > 0
@@ -36,7 +36,7 @@ def test_jingle_is_repeatable(working_directory):
     file.write_bytes(b"hello")
     options = ["--measures", "1"]
     cli.main(["jingle", str(file), *options])
-    directory = working_directory / "pynesthesia" / "jingles"
+    directory = working_directory / "pynesthesia_output" / "jingles"
     output = next(directory.glob("*.mp3"))
     first_audio = output.read_bytes()
 
@@ -51,7 +51,7 @@ def test_jingle_with_missing_file(working_directory, capsys):
     cli.main(["jingle", str(working_directory / "missing_file_bro.txt")])
 
     assert "Error processing file" in capsys.readouterr().out
-    assert not (working_directory / "pynesthesia").exists()
+    assert not (working_directory / "pynesthesia_output").exists()
 
 
 def test_invalid_commands(tmp_path):
@@ -97,7 +97,7 @@ def test_html_from_file(working_directory, capsys):
     file.write_bytes(b"hello")
     cli.main(["html", str(file)])
     outputs = list(
-        (working_directory / "pynesthesia" / "fortunes").glob("*.html")
+        (working_directory / "pynesthesia_output" / "fortunes").glob("*.html")
     )
 
     assert len(outputs) == 1
@@ -116,7 +116,7 @@ def test_html_is_repeatable(working_directory):
     file = working_directory / "html_test.txt"
     file.write_bytes(b"hello")
     cli.main(["html", str(file)])
-    directory = working_directory / "pynesthesia" / "fortunes"
+    directory = working_directory / "pynesthesia_output" / "fortunes"
     output = next(directory.glob("*.html"))
     first_page = output.read_bytes()
 
@@ -136,7 +136,7 @@ def test_different_files_make_different_html_names(working_directory):
     cli.main(["html", str(second_file)])
 
     outputs = list(
-        (working_directory / "pynesthesia" / "fortunes").glob("*.html")
+        (working_directory / "pynesthesia_output" / "fortunes").glob("*.html")
     )
 
     assert len(outputs) == 2
@@ -147,7 +147,7 @@ def test_html_with_missing_file(working_directory, capsys):
     cli.main(["html", str(working_directory / "missing_file.txt")])
 
     assert "Error processing file" in capsys.readouterr().out
-    assert not (working_directory / "pynesthesia").exists()
+    assert not (working_directory / "pynesthesia_output").exists()
 
 
 def test_cli_colorizes(capsys):
@@ -162,7 +162,7 @@ def test_chiptune_from_file(working_directory, capsys):
     file = working_directory / "chiptune_test.txt"
     file.write_bytes(b"hello")
     cli.main(["chiptune", str(file)])
-    outputs = list((working_directory / "pynesthesia" / "chiptunes").glob("*.wav"))
+    outputs = list((working_directory / "pynesthesia_output" / "chiptunes").glob("*.wav"))
 
     assert len(outputs) == 1
     assert outputs[0].read_bytes()[:4] == b"RIFF"
@@ -175,7 +175,7 @@ def test_chiptune_options_change_the_name(working_directory):
     file = working_directory / "chiptune_test.txt"
     file.write_bytes(b"hello")
     cli.main(["chiptune", str(file), "--bars", "1", "--wave", "saw"])
-    outputs = list((working_directory / "pynesthesia" / "chiptunes").glob("*.wav"))
+    outputs = list((working_directory / "pynesthesia_output" / "chiptunes").glob("*.wav"))
 
     assert len(outputs) == 1
     assert outputs[0].name.endswith("_bars-1_wave-saw.wav")
@@ -187,7 +187,7 @@ def test_chiptune_is_repeatable(working_directory):
     file = working_directory / "same_chiptune.txt"
     file.write_bytes(b"hello")
     cli.main(["chiptune", str(file), "--bars", "1"])
-    directory = working_directory / "pynesthesia" / "chiptunes"
+    directory = working_directory / "pynesthesia_output" / "chiptunes"
     output = next(directory.glob("*.wav"))
     first_audio = output.read_bytes()
 
@@ -202,7 +202,7 @@ def test_chiptune_with_missing_file(working_directory, capsys):
     cli.main(["chiptune", str(working_directory / "missing_chiptune.txt")])
 
     assert "Error processing file" in capsys.readouterr().out
-    assert not (working_directory / "pynesthesia").exists()
+    assert not (working_directory / "pynesthesia_output").exists()
 
 
 def test_invalid_chiptune_commands(tmp_path):
