@@ -1,3 +1,4 @@
+import random
 import pynesthesia.jingle as jingle
 from pynesthesia.jingle import jingle_config
 
@@ -33,3 +34,25 @@ def test_rhythm_lengths():
     """check that each rhythm fills its measure"""
     for rhythm in jingle_config["rhythms"]:
         assert sum(rhythm) == jingle_config["beatsPerMeasure"]
+
+def test_valid_scales(): 
+    """check that every scale is a valid scale (ends an octave up)"""
+    for scale in jingle_config["scales"]: 
+        assert scale[0] == 0
+        assert scale[-1] == 12
+        assert scale == sorted(scale)
+
+def test_tempo_speed(): 
+    """check that every tempo is a reasonable speed"""
+    for tempo in jingle_config["tempos"]: 
+        assert 60 <= tempo <= 200
+
+def test_settings_in_config(): 
+    """check that the chosen settings are vaild"""
+    settings = jingle.choose_settings(random.Random(0))
+    waveform, attack, decay, vibrato, tempo, scale, root_note = settings
+
+    assert tempo in jingle_config["tempos"]
+    assert scale in jingle_config["scales"]
+    assert root_note in jingle_config["rootNotes"]
+
