@@ -8,6 +8,7 @@ import pynesthesia.jingle as jingle
 import pynesthesia.htmlgen as htmlgen
 import pynesthesia.chiptune as chiptune
 import pynesthesia.flower as flower
+import pynesthesia.retro8bit as retro8bit
 
 def jingle_from_file(path, measures=jingle.jingle_config["measuresDefault"]):
     """create an mp3 from a file"""
@@ -47,6 +48,18 @@ def chiptune_from_file(path, bars=4, wave="square"):
         output.write_bytes(chiptune.create_chiptune(seed, bars=bars, wave_type=wave))
         print(f"chiptune saved to: {output}")
 
+def retro_from_file(path, bars=4, wave="pulse25"):
+    """create an 8-bit retro game tune (wav) from a file"""
+    seed = hashseed.generate_file_hash(path)
+    if seed is not None:
+        directory = Path.cwd() / "pynesthesia_output" / "retro"
+        directory.mkdir(parents=True, exist_ok=True)
+
+        # the options are part of the filename, the same way the chiptune does it
+        output = directory / f"{seed}_bars-{bars}_wave-{wave}.wav"
+        output.write_bytes(retro8bit.create_retro(seed, bars=bars, wave_type=wave))
+        print(f"retro tune saved to: {output}")
+
 def flower_from_file(path):
     """Create an SVG flower picture from a file"""
     seed = hashseed.generate_file_hash(path)
@@ -54,7 +67,7 @@ def flower_from_file(path):
         species, style = flower.choose_flower(seed)
         directory = Path.cwd() / "pynesthesia_output" / "flower"
         directory.mkdir(parents=True, exist_ok=True)
-    
+
         output = directory / f"{species}_{style}_{seed[:12]}.svg"
         flower.svg_to_file(seed, output)
         print(f"SVG saved to: {output}")
@@ -71,6 +84,9 @@ def run_html(args):
 
 def run_chiptune(args):
     chiptune_from_file(args.path, args.bars, args.wave)
+
+def run_retro(args):
+    retro_from_file(args.path, args.bars, args.wave)
 
 def run_flower(args):
     flower_from_file(args.path)
@@ -102,6 +118,18 @@ def main(argv=None):
         help="melody sound (default: %(default)s)",
     )
     chiptune_parser.set_defaults(handler = run_chiptune)
+
+    retro_parser = commands.add_parser("retro", help="create an 8-bit retro game tune (wav) from a file")
+    retro_parser.add_argument("path", help="absolute path to a file")
+    retro_parser.add_argument(
+        "--bars", type=int, choices=range(1, 33), default=4, metavar="1-32",
+        help="length in bars (default: %(default)s)",
+    )
+    retro_parser.add_argument(
+        "--wave", choices=list(retro8bit.WAVES), default="pulse25",
+        help="melody voice (default: %(default)s)",
+    )
+    retro_parser.set_defaults(handler = run_retro)
 
     flower_parser = commands.add_parser("flower", help="create an svg flower from a file")
     flower_parser.add_argument("path", help="absolute path to a file")

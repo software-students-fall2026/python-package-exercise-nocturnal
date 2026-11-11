@@ -65,7 +65,17 @@ def test_invalid_commands(tmp_path):
         ["html"],
         ["html", "relative.txt"],
         ["flower"],
-        ["flower", "relative.txt"]
+        ["flower", "relative.txt"],
+        ["chiptune"],
+        ["chiptune", "relative.txt"],
+        ["chiptune", file, "--bars", "0"],
+        ["chiptune", file, "--bars", "33"],
+        ["chiptune", file, "--wave", "kazoo"],
+        ["retro"],
+        ["retro", "relative.txt"],
+        ["retro", file, "--bars", "0"],
+        ["retro", file, "--bars", "33"],
+        ["retro", file, "--wave", "square"],
     ]
     for command in commands:
         # argparse uses exit code 2 for errors
@@ -204,26 +214,6 @@ def test_chiptune_with_missing_file(working_directory, capsys):
     assert "Error processing file" in capsys.readouterr().out
     assert not (working_directory / "pynesthesia_output").exists()
 
-
-def test_invalid_chiptune_commands(tmp_path):
-    """check that invalid chiptune commands are rejected"""
-    file = str(tmp_path / "input.txt")
-    commands = [
-        ["chiptune"],
-        ["chiptune", "relative.txt"],
-        ["chiptune", file, "--bars", "0"],
-        ["chiptune", file, "--bars", "33"],
-        ["chiptune", file, "--wave", "kazoo"],
-        ["--colorize", "0f", "chiptune", file],
-    ]
-    for command in commands:
-        # argparse uses exit code 2 for errors
-        with pytest.raises(SystemExit) as error:
-            cli.main(command)
-
-        assert error.value.code == 2
-
-
 def test_cannot_save_chiptune(working_directory, capsys, monkeypatch):
     """check that a chiptune save error is reported"""
     file = working_directory / "input.txt"
@@ -272,6 +262,54 @@ def test_flower_is_repeatable(working_directory):
 def test_flower_with_missing_file(working_directory, capsys):
     """Check that a missing file creates no svg flower"""
     cli.main(["flower", str(working_directory / "missing_flower.txt")])
+
+    assert "Error processing file" in capsys.readouterr().out
+    assert not (working_directory / "pynesthesia_output").exists()
+
+
+def test_retro_from_file(working_directory, capsys):
+    """check that a file creates an 8-bit retro wav"""
+    file = working_directory / "retro_test.txt"
+    file.write_bytes(b"hello")
+    cli.main(["retro", str(file)])
+    outputs = list((working_directory / "pynesthesia_output" / "retro").glob("*.wav"))
+
+    assert len(outputs) == 1
+    assert outputs[0].read_bytes()[:4] == b"RIFF"
+    assert "_bars-4_wave-pulse25.wav" in outputs[0].name
+    assert str(outputs[0]) in capsys.readouterr().out
+
+
+def test_retro_options_change_the_name(working_directory):
+    """check that --bars and --wave end up in the filename"""
+    file = working_directory / "retro_test.txt"
+    file.write_bytes(b"hello")
+    cli.main(["retro", str(file), "--bars", "1", "--wave", "triangle"])
+    outputs = list((working_directory / "pynesthesia_output" / "retro").glob("*.wav"))
+
+    assert len(outputs) == 1
+    assert outputs[0].name.endswith("_bars-1_wave-triangle.wav")
+    assert outputs[0].stat().st_size > 0
+
+
+def test_retro_is_repeatable(working_directory):
+    """check that the same file makes the same retro wav"""
+    file = working_directory / "same_retro.txt"
+    file.write_bytes(b"hello")
+    cli.main(["retro", str(file), "--bars", "1"])
+    directory = working_directory / "pynesthesia_output" / "retro"
+    output = next(directory.glob("*.wav"))
+    first_audio = output.read_bytes()
+
+    cli.main(["retro", str(file), "--bars", "1"])
+
+    assert list(directory.glob("*.wav")) == [output]
+    assert output.read_bytes() == first_audio
+
+
+def test_retro_with_missing_file(working_directory, capsys):
+    """check that a missing file creates no retro tune"""
+    cli.main(["retro", str(working_directory / "missing_retro.txt")])
 
     assert "Error processing file" in capsys.readouterr().out
     assert not (working_directory / "pynesthesia_output").exists()

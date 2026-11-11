@@ -53,9 +53,25 @@ from pynesthesia import chiptune
 
 wav_bytes = chiptune.create_chiptune(seed, bpm=140, bars=4, wave_type="square")
 # Turn a SHA-256 hash (64 hex characters) into WAV bytes. Same hash -> same song.
+# bpm: 60-240 (default: picked by the hash)   bars: 1+ (default 4)
+# wave_type: "square" (default), "triangle", "saw", "pulse"
 
 chiptune.save_chiptune(seed, "chiptune.wav", bars=8, wave_type="saw")
-# Create the chiptune and write it to `path` as a .wav file.
+# Create the chiptune and write it to `path` as a .wav file. Same arguments as above.
+# Refuses to replace a file that already exists (raises FileExistsError).
+```
+
+**8-BIT**
+```python
+from pynesthesia import retro8bit
+
+wav_bytes = retro8bit.create_retro(seed, bpm=150, bars=4, wave_type="pulse25")
+# Turn a SHA-256 hash (64 hex characters) into 8-bit WAV bytes. Same hash -> same tune.
+# bpm: 60-240 (default: picked by the hash)   bars: 1+ (default 4)
+# wave_type: "pulse12" (thin), "pulse25" (nasal, default), "pulse50" (full), "triangle" (soft)
+
+retro8bit.save_retro(seed, "retro.wav", bars=8, wave_type="pulse12")
+# Create the 8-bit tune and write it to `path` as a .wav file. Same arguments as above.
 # Refuses to replace a file that already exists (raises FileExistsError).
 ```
 
