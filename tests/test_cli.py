@@ -1,7 +1,4 @@
-import hashlib
 import os
-import subprocess
-import sys
 from pathlib import Path
 
 import pytest
@@ -12,164 +9,234 @@ import pynesthesia.colors as colors
 
 @pytest.fixture
 def working_directory(tmp_path):
-    # move into a temporary directory so the jingle is saved there
-    previous = Path.cwd()
+    """save jingles in a temporary directory"""
+    previous_directory = Path.cwd()
     os.chdir(tmp_path)
     yield tmp_path
 
-    # return to the original directory after the test
-    os.chdir(previous)
+    # return to the original directory
+    os.chdir(previous_directory)
 
 
-def test_cli_prints_file_hash(tmp_path, capsys):
-    """simulate hashing a text file"""
-    file = tmp_path / "random.txt"
-    random_bytes = b"random text file"
-
-    file.write_bytes(random_bytes)
-    expected_output = hashlib.sha256(random_bytes).hexdigest()
-
-    cli.hash_file(str(file))
-    assert capsys.readouterr().out.strip() == expected_output
-
-
-def test_cli_with_missing_file(tmp_path, capsys):
-    """simulate file not found error condition"""
-    filepath = tmp_path / "missing.txt"
-
-    cli.hash_file(str(filepath))
-    assert "Error processing file" in capsys.readouterr().out
-
-
-def test_cli_requires_a_path(capsys):
-    """simulate missing file path"""
-    # argparse exits when the required path is missing
-    with pytest.raises(SystemExit) as exc:
-        cli.main([])
-
-    # argparse uses exit code 2 for invalid arguments
-    assert exc.value.code == 2
-    assert "path" in capsys.readouterr().err
-
-
-def test_module_entry_point(tmp_path):
-    """simulate running the package"""
-    file = tmp_path / "random.txt"
-    random_bytes = b"random text file"
-
-    file.write_bytes(random_bytes)
-    expected_output = hashlib.sha256(random_bytes).hexdigest()
-    result = subprocess.run(
-        [sys.executable, "-m", "pynesthesia", str(file)],
-        capture_output=True,
-        text=True,
-    )
-
-    assert result.returncode == 0
-    assert result.stdout.strip() == expected_output
-
-
-def test_jingle_from_file_and_seed(working_directory, capsys):
-    """check that a file and its hash make the same jingle"""
-    file = working_directory / "input.txt"
+def test_jingle_from_file(working_directory, capsys):
+    """check that a file creates a jingle"""
+    file = working_directory / "little_file_bro.txt"
     file.write_bytes(b"hello")
-    seed = hashlib.sha256(b"hello").hexdigest()
-    output = working_directory / "jingle.mid"
+    cli.main(["jingle", str(file), "--measures", "1"])
+    outputs = list((working_directory / "pynesthesia" / "jingles").glob("*.mp3"))
 
-    # create a jingle from the file
-    cli.main(["--file", str(file)])
-    first = output.read_bytes()
+    assert len(outputs) == 1
+    assert outputs[0].stat().st_size > 0
+    assert "_measures-1.mp3" in outputs[0].name
+    assert str(outputs[0]) in capsys.readouterr().out
 
-    assert str(output) in capsys.readouterr().out
+def test_jingle_is_repeatable(working_directory):
+    """check that the same file makes the same mp3"""
+    file = working_directory / "same_file_bro.txt"
+    file.write_bytes(b"hello")
+    options = ["--measures", "1"]
+    cli.main(["jingle", str(file), *options])
+    directory = working_directory / "pynesthesia" / "jingles"
+    output = next(directory.glob("*.mp3"))
+    first_audio = output.read_bytes()
 
-    # remove the first file so the next command can save another
-    output.unlink()
-    cli.main(["--seed", seed])
+    cli.main(["jingle", str(file), *options])
 
-    assert output.read_bytes() == first
-    assert str(output) in capsys.readouterr().out
+    assert list(directory.glob("*.mp3")) == [output]
+    assert output.read_bytes() == first_audio
 
 
 def test_jingle_with_missing_file(working_directory, capsys):
-    """check that a missing file does not create a jingle"""
-    cli.main(["--file", str(working_directory / "missing.txt")])
+    """check that a missing file creates no jingle"""
+    cli.main(["jingle", str(working_directory / "missing_file_bro.txt")])
 
     assert "Error processing file" in capsys.readouterr().out
-    assert not (working_directory / "jingle.mid").exists()
+    assert not (working_directory / "pynesthesia").exists()
 
 
-def test_jingle_does_not_replace_file(working_directory, capsys):
-    """check that an existing jingle is not replaced"""
-    output = working_directory / "jingle.mid"
-    output.write_bytes(b"existing")
-
-    # argparse exits when the output already exists
-    with pytest.raises(SystemExit) as exc:
-        cli.main(["--seed", "00" * 32])
-
-    # argparse uses exit code 2 and the original file stays unchanged
-    assert exc.value.code == 2
-    assert "already exists" in capsys.readouterr().err
-    assert output.read_bytes() == b"existing"
-
-
-def test_invalid_inputs(capsys):
-    """check that invalid inputs show an error"""
-    inputs = [
-        (["--seed", "invalid"], "valid sha-256 hash"),
-        (["--file", "relative.txt"], "absolute file path"),
-        (["/some/file", "--seed", "00" * 32], "provide one file path"),
+def test_invalid_commands(tmp_path):
+    """check that invalid commands are rejected"""
+    file = str(tmp_path / "input.txt")
+    commands = [
+        [], ["jingle"], ["jingle", "relative.txt"],
+        ["jingle", file, "--measures", "0"],
+        ["jingle", file, "--measures", "113"],
+        ["--colorize", "0f", "jingle", file],
+        ["html"],
+        ["html", "relative.txt"]
     ]
+    for command in commands:
+        # argparse uses exit code 2 for errors
+        with pytest.raises(SystemExit) as error:
+            cli.main(command)
 
-    for args, message in inputs:
-        # argparse uses exit code 2 for invalid input
-        with pytest.raises(SystemExit) as exc:
-            cli.main(args)
-
-        assert exc.value.code == 2
-        assert message in capsys.readouterr().err
+        assert error.value.code == 2
 
 
 def test_cannot_save_jingle(working_directory, capsys):
     """check that a save error is reported"""
-    # remove the current directory so the file cannot be saved
+    file = working_directory / "input.txt"
+    file.write_bytes(b"hello")
+
+    # remove the current directory first
+    # this prevents saving the output
     directory = working_directory / "removed"
     directory.mkdir()
     os.chdir(directory)
     directory.rmdir()
 
-    with pytest.raises(SystemExit) as exc:
-        cli.main(["--seed", "00" * 32])
+    with pytest.raises(SystemExit) as error:
+        cli.main(["jingle", str(file)])
 
-    # argparse uses exit code 2 when it reports an error
-    assert exc.value.code == 2
-    assert "could not save jingle" in capsys.readouterr().err
+    assert error.value.code == 2
+    assert "could not save output" in capsys.readouterr().err
 
-
-def test_module_creates_jingle(tmp_path):
-    """check that the command creates a jingle"""
-    file = tmp_path / "random.txt"
-    file.write_bytes(b"random text file")
-
-    # run the command in a temporary directory
-    result = subprocess.run(
-        [sys.executable, "-m", "pynesthesia", "--file", str(file)],
-        cwd=tmp_path,
-        capture_output=True,
-        text=True,
+def test_html_from_file(working_directory, capsys):
+    """Check that a file creates an html page"""
+    file = working_directory / "html_test.txt"
+    file.write_bytes(b"hello")
+    cli.main(["html", str(file)])
+    outputs = list(
+        (working_directory / "pynesthesia" / "fortunes").glob("*.html")
     )
 
-    output = tmp_path / "jingle.mid"
+    assert len(outputs) == 1
+    assert outputs[0].stat().st_size > 0
+    assert len(outputs[0].stem) == 12
+    assert str(outputs[0]) in capsys.readouterr().out
 
-    # exit code 0 means the command ran successfully
-    assert result.returncode == 0
-    assert output.exists()
-    assert str(output) in result.stdout
+    page = outputs[0].read_text(encoding="utf-8")
+
+    assert "Yesterday's Fortune" in page
+    assert "Today's Fortune" in page
+    assert "Tomorrow's Fortune" in page
+
+def test_html_is_repeatable(working_directory):
+    """Check that the same input file gives the same html page"""
+    file = working_directory / "html_test.txt"
+    file.write_bytes(b"hello")
+    cli.main(["html", str(file)])
+    directory = working_directory / "pynesthesia" / "fortunes"
+    output = next(directory.glob("*.html"))
+    first_page = output.read_bytes()
+
+    cli.main(["html", str(file)])
+
+    assert list(directory.glob("*.html")) == [output]
+    assert output.read_bytes() == first_page
+
+def test_different_files_make_different_html_names(working_directory):
+    """Check that different files get different output names"""
+    first_file = working_directory / "first.txt"
+    second_file = working_directory / "second.txt"
+    first_file.write_bytes(b"hello")
+    second_file.write_bytes(b"goodbye")
+
+    cli.main(["html", str(first_file)])
+    cli.main(["html", str(second_file)])
+
+    outputs = list(
+        (working_directory / "pynesthesia" / "fortunes").glob("*.html")
+    )
+
+    assert len(outputs) == 2
+    assert outputs[0].name != outputs[1].name
+
+def test_html_with_missing_file(working_directory, capsys):
+    """Check that a missing file creates no fortune page."""
+    cli.main(["html", str(working_directory / "missing_file.txt")])
+
+    assert "Error processing file" in capsys.readouterr().out
+    assert not (working_directory / "pynesthesia").exists()
+
 
 def test_cli_colorizes(capsys):
-    """check that --colorize actually prints colored text"""
+    """check that colorize prints colored text"""
     cli.main(["--colorize", "0f"])
-    printed = capsys.readouterr().out.strip()
-    expected = colors.colorize("0f")
-    assert printed == expected
 
+    assert capsys.readouterr().out.strip() == colors.colorize("0f")
+
+
+def test_chiptune_from_file(working_directory, capsys):
+    """check that a file creates a chiptune wav"""
+    file = working_directory / "chiptune_test.txt"
+    file.write_bytes(b"hello")
+    cli.main(["chiptune", str(file)])
+    outputs = list((working_directory / "pynesthesia" / "chiptunes").glob("*.wav"))
+
+    assert len(outputs) == 1
+    assert outputs[0].read_bytes()[:4] == b"RIFF"
+    assert "_bars-4_wave-square.wav" in outputs[0].name
+    assert str(outputs[0]) in capsys.readouterr().out
+
+
+def test_chiptune_options_change_the_name(working_directory):
+    """check that --bars and --wave end up in the filename"""
+    file = working_directory / "chiptune_test.txt"
+    file.write_bytes(b"hello")
+    cli.main(["chiptune", str(file), "--bars", "1", "--wave", "saw"])
+    outputs = list((working_directory / "pynesthesia" / "chiptunes").glob("*.wav"))
+
+    assert len(outputs) == 1
+    assert outputs[0].name.endswith("_bars-1_wave-saw.wav")
+    assert outputs[0].stat().st_size > 0
+
+
+def test_chiptune_is_repeatable(working_directory):
+    """check that the same file makes the same wav"""
+    file = working_directory / "same_chiptune.txt"
+    file.write_bytes(b"hello")
+    cli.main(["chiptune", str(file), "--bars", "1"])
+    directory = working_directory / "pynesthesia" / "chiptunes"
+    output = next(directory.glob("*.wav"))
+    first_audio = output.read_bytes()
+
+    cli.main(["chiptune", str(file), "--bars", "1"])
+
+    assert list(directory.glob("*.wav")) == [output]
+    assert output.read_bytes() == first_audio
+
+
+def test_chiptune_with_missing_file(working_directory, capsys):
+    """check that a missing file creates no chiptune"""
+    cli.main(["chiptune", str(working_directory / "missing_chiptune.txt")])
+
+    assert "Error processing file" in capsys.readouterr().out
+    assert not (working_directory / "pynesthesia").exists()
+
+
+def test_invalid_chiptune_commands(tmp_path):
+    """check that invalid chiptune commands are rejected"""
+    file = str(tmp_path / "input.txt")
+    commands = [
+        ["chiptune"],
+        ["chiptune", "relative.txt"],
+        ["chiptune", file, "--bars", "0"],
+        ["chiptune", file, "--bars", "33"],
+        ["chiptune", file, "--wave", "kazoo"],
+        ["--colorize", "0f", "chiptune", file],
+    ]
+    for command in commands:
+        # argparse uses exit code 2 for errors
+        with pytest.raises(SystemExit) as error:
+            cli.main(command)
+
+        assert error.value.code == 2
+
+
+def test_cannot_save_chiptune(working_directory, capsys):
+    """check that a chiptune save error is reported"""
+    file = working_directory / "input.txt"
+    file.write_bytes(b"hello")
+
+    # remove the current directory first so the output cannot be saved
+    directory = working_directory / "removed"
+    directory.mkdir()
+    os.chdir(directory)
+    directory.rmdir()
+
+    with pytest.raises(SystemExit) as error:
+        cli.main(["chiptune", str(file)])
+
+    assert error.value.code == 2
+    assert "could not save output" in capsys.readouterr().err

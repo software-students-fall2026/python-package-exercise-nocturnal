@@ -1,22 +1,30 @@
-import hashlib
+import os
 import runpy
 import sys
+from pathlib import Path
 
 
 def test_main_runs_cli(tmp_path, capsys):
+    """check that the package starts the command line"""
     file = tmp_path / "input.txt"
     file.write_bytes(b"hello")
-    expected = hashlib.sha256(b"hello").hexdigest()
+    output_directory = tmp_path / "pynesthesia" / "jingles"
 
-    # give the package a file path as a command line argument
-    previous = sys.argv
+    # pass a file path to the package
+    previous_args = sys.argv
+    previous_directory = Path.cwd()
     try:
-        sys.argv = ["pynesthesia", str(file)]
+        os.chdir(tmp_path)
+        sys.argv = ["pynesthesia", "jingle", str(file)]
 
-        # run the package as if it were started from the command line
+        # run the package from the command line
         runpy.run_module("pynesthesia", run_name="__main__")
     finally:
-        # restore the original arguments after the test
-        sys.argv = previous
+        # restore the original arguments and directory
+        sys.argv = previous_args
+        os.chdir(previous_directory)
 
-    assert capsys.readouterr().out.strip() == expected
+    outputs = list(output_directory.glob("*.mp3"))
+
+    assert len(outputs) == 1
+    assert str(outputs[0]) in capsys.readouterr().out

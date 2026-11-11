@@ -12,7 +12,7 @@ jobs:
     runs-on: ubuntu-latest
     timeout-minutes: 5
     permissions:
-      contents: read
+      contents: write
       id-token: write
     steps:
       - uses: actions/checkout@v5
@@ -31,6 +31,7 @@ jobs:
           VERSION=$(date +%Y.%m.%d).${{ github.run_number }}
           sed -i "s/^version = .*/version = \"$VERSION\"/" pyproject.toml
           echo "version: $VERSION"
+          echo "VERSION=$VERSION" >> $GITHUB_ENV
       - name: Build package
         run: |
           pipenv install build
@@ -42,5 +43,9 @@ jobs:
         with:
           repository-url: https://test.pypi.org/legacy/
           skip-existing: true
+      - name: Create Github release 
+        env: 
+          GH_TOKEN: ${{ github.token }}
+        run: gh release create "v$VERSION" dist/* --target ${{ github.event.workflow_run.head_sha }} --title "v$VERSION" --generate-notes
 
 

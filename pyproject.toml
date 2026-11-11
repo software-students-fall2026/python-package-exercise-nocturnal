@@ -8,7 +8,7 @@ version = "0.1.0"
 description = "A Python package developed by Team Nocturnal."
 readme = "README.md"
 requires-python = ">=3.11"
-dependencies = ["mido"]
+dependencies = ["lameenc", "tones==1.2.0"]
 authors = [
     { name = "Christina Lin" },
     { name = "Daniel Zhang" },
@@ -32,3 +32,9 @@ Repository = "https://github.com/software-students-fall2026/python-package-exerc
 "Jason Wang" = "https://github.com/TirpitzS128"
 "Rishi Ajoykumar" = "https://github.com/ajoykumarrishi"
 "Matthew Chen" = "https://github.com/23matthewc"
+
+[project.scripts]
+pynesthesia = "pynesthesia.cli:main"
+
+[tool.setuptools.package-data]
+pynesthesia = ["jingleConfig.json"]

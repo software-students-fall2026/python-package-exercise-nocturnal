@@ -9,5 +9,6 @@ twine = "*"
 python_version = "3"
 
 [packages]
+lameenc = "*"
+tones = "==1.2.0"
 pynesthesia = {path = ".", editable = true}
-mido = "*"
