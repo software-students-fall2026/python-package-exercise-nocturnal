@@ -5,7 +5,7 @@ import pynesthesia.output as output_writer
 import pynesthesia.colors as colors
 import pynesthesia.hashseed as hashseed
 import pynesthesia.jingle as jingle
-
+import pynesthesia.htmlgen as htmlgen
 
 def jingle_from_file(path, measures=jingle.jingle_config["measuresDefault"]):
     """create an mp3 from a file"""
@@ -21,19 +21,41 @@ def jingle_from_file(path, measures=jingle.jingle_config["measuresDefault"]):
         output_writer.save_mp3(seed, output, **options)
         print(f"jingle saved to: {output}")
 
+def html_from_file(path):
+    """Create an HTML fortune page from a file"""
+    seed = hashseed.generate_file_hash(path)
+    if seed is not None:
+        cards = htmlgen.generate_cards(seed)
+        directory = Path.cwd() / "pynesthesia" / "fortunes"
+        directory.mkdir(parents=True, exist_ok=True)
+
+        output = directory / f"{seed[:12]}.html"
+        htmlgen.write_html(cards, output)
+        print(f"HTML page saved to: {output}")
 
 def colorize_text(text):
     """print each character in its color"""
     print(colors.colorize(text))
 
+def run_jingle(args):
+    jingle_from_file(args.path, args.measures)
+
+def run_html(args):
+    html_from_file(args.path)
 
 def main(argv=None):
     # set up the command line options
     parser = argparse.ArgumentParser(description="create a jingle or color text")
     parser.add_argument("--colorize", help="text to print in color")
-    commands = parser.add_subparsers(dest="command")
+    commands = parser.add_subparsers(dest="command")\
+    
     jingle_parser = commands.add_parser("jingle", help="create a jingle from a file")
     jingle_parser.add_argument("path", help="absolute path to a file")
+    jingle_parser.set_defaults(handler = run_jingle)
+
+    html_parser = commands.add_parser("html", help="Create a html fortune page from a file")
+    html_parser.add_argument("path", help="Absolute path to a file")
+    html_parser.set_defaults(handler = run_html)
 
     # limit the jingle to five minutes
     minimum, maximum = jingle.jingle_config["measuresLimits"]
@@ -44,19 +66,20 @@ def main(argv=None):
     )
 
     args = parser.parse_args(argv)
+
     if args.colorize is not None:
         if args.command is not None:
-            parser.error("choose either colorize or jingle")
+            parser.error("choose either --colorize or a command")
         colorize_text(args.colorize)
         return
 
     if args.command is None:
-        parser.error("choose jingle or --colorize")
+        parser.error("choose a command or --colorize")
 
-    if not Path(args.path).is_absolute():
+    if hasattr(args, "path") and not Path(args.path).is_absolute():
         parser.error("provide an absolute file path")
 
     try:
-        jingle_from_file(args.path, args.measures)
+        args.handler(args)
     except OSError as error:
-        parser.error(f"could not save jingle: {error}")
+        parser.error(f"could not save output: {error}")
