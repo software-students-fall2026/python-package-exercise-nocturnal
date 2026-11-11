@@ -45,9 +45,9 @@ class Tests:
         Verify render_flower_svg() return different pictures for different hashes
         """
         image1 = flower.render_flower_svg("00" * 32)
-        image2 = flower.render_flower_svg("hh" * 32)
+        image2 = flower.render_flower_svg("ac" * 32)
 
-        assert image1 == image2, "Expected different images for different hashes"
+        assert image1 != image2, "Expected different images for different hashes"
 
     def test_render_flower_svg_invalid(self):
         """
@@ -57,3 +57,15 @@ class Tests:
             flower.render_flower_svg("00")
         with pytest.raises(ValueError):
             flower.render_flower_svg("not hex")
+
+    def test_svg_to_file_valid(self, tmp_path):
+        """
+        Verify svg_to_file() returns a valide .svg file
+        """
+        output = tmp_path / "my_flower.svg"
+        flower.svg_to_file(hash_test, output)
+
+        assert output.exists(), "Expected .svg file, but does not exist"
+        assert output.name == "my_flower.svg", "Expected correct filename"
+        assert output.read_text(encoding="utf-8").startswith("<svg"), "Expected .svg file to hold svg text"
+        
