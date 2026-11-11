@@ -155,3 +155,88 @@ def test_cli_colorizes(capsys):
     cli.main(["--colorize", "0f"])
 
     assert capsys.readouterr().out.strip() == colors.colorize("0f")
+
+
+def test_chiptune_from_file(working_directory, capsys):
+    """check that a file creates a chiptune wav"""
+    file = working_directory / "chiptune_test.txt"
+    file.write_bytes(b"hello")
+    cli.main(["chiptune", str(file)])
+    outputs = list((working_directory / "pynesthesia" / "chiptunes").glob("*.wav"))
+
+    assert len(outputs) == 1
+    assert outputs[0].read_bytes()[:4] == b"RIFF"
+    assert "_bars-4_wave-square.wav" in outputs[0].name
+    assert str(outputs[0]) in capsys.readouterr().out
+
+
+def test_chiptune_options_change_the_name(working_directory):
+    """check that --bars and --wave end up in the filename"""
+    file = working_directory / "chiptune_test.txt"
+    file.write_bytes(b"hello")
+    cli.main(["chiptune", str(file), "--bars", "1", "--wave", "saw"])
+    outputs = list((working_directory / "pynesthesia" / "chiptunes").glob("*.wav"))
+
+    assert len(outputs) == 1
+    assert outputs[0].name.endswith("_bars-1_wave-saw.wav")
+    assert outputs[0].stat().st_size > 0
+
+
+def test_chiptune_is_repeatable(working_directory):
+    """check that the same file makes the same wav"""
+    file = working_directory / "same_chiptune.txt"
+    file.write_bytes(b"hello")
+    cli.main(["chiptune", str(file), "--bars", "1"])
+    directory = working_directory / "pynesthesia" / "chiptunes"
+    output = next(directory.glob("*.wav"))
+    first_audio = output.read_bytes()
+
+    cli.main(["chiptune", str(file), "--bars", "1"])
+
+    assert list(directory.glob("*.wav")) == [output]
+    assert output.read_bytes() == first_audio
+
+
+def test_chiptune_with_missing_file(working_directory, capsys):
+    """check that a missing file creates no chiptune"""
+    cli.main(["chiptune", str(working_directory / "missing_chiptune.txt")])
+
+    assert "Error processing file" in capsys.readouterr().out
+    assert not (working_directory / "pynesthesia").exists()
+
+
+def test_invalid_chiptune_commands(tmp_path):
+    """check that invalid chiptune commands are rejected"""
+    file = str(tmp_path / "input.txt")
+    commands = [
+        ["chiptune"],
+        ["chiptune", "relative.txt"],
+        ["chiptune", file, "--bars", "0"],
+        ["chiptune", file, "--bars", "33"],
+        ["chiptune", file, "--wave", "kazoo"],
+        ["--colorize", "0f", "chiptune", file],
+    ]
+    for command in commands:
+        # argparse uses exit code 2 for errors
+        with pytest.raises(SystemExit) as error:
+            cli.main(command)
+
+        assert error.value.code == 2
+
+
+def test_cannot_save_chiptune(working_directory, capsys):
+    """check that a chiptune save error is reported"""
+    file = working_directory / "input.txt"
+    file.write_bytes(b"hello")
+
+    # remove the current directory first so the output cannot be saved
+    directory = working_directory / "removed"
+    directory.mkdir()
+    os.chdir(directory)
+    directory.rmdir()
+
+    with pytest.raises(SystemExit) as error:
+        cli.main(["chiptune", str(file)])
+
+    assert error.value.code == 2
+    assert "could not save output" in capsys.readouterr().err
