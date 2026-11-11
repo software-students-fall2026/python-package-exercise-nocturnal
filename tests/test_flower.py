@@ -20,8 +20,8 @@ class Tests:
         """
         # every byte is 00, both pick first item in their list
         species, style = flower.choose_flower("00" * 32)
-        assert species == flower.species_names[0], "Expected to pick first species in list, instead: {species}"
-        assert style == flower.art_styles[0], "Expected to pick first art style in list, instead: {style}" 
+        assert species == flower.species_names[0], f"Expected to pick first species in list, instead: {species}"
+        assert style == flower.art_styles[0], f"Expected to pick first art style in list, instead: {style}" 
 
     def test_choose_flower_requires_a_sha256_hash(self):
         """
@@ -32,14 +32,15 @@ class Tests:
         with pytest.raises(ValueError):
             flower.choose_flower("not hex")
 
-    def test_render_flower_svg_correct_petals(self):
+    def test_render_flower_svg_valid(self):
         """
         Verify render_flower_svg() returns a svg 
         """
         svg = flower.render_flower_svg(hash_test)
         assert svg.startswith("<svg"), "Expected the text to start with <svg"
-        assert svg.endswith("</svg>"), "Expected the text to end with <svg"
+        assert svg.endswith("</svg>"), "Expected the text to end with </svg>"
         assert "title>" in svg, "Expected the svg to have title to know flower and art style"
+
     def test_render_flower_svg_different(self):
         """
         Verify render_flower_svg() return different pictures for different hashes
@@ -68,4 +69,3 @@ class Tests:
         assert output.exists(), "Expected .svg file, but does not exist"
         assert output.name == "my_flower.svg", "Expected correct filename"
         assert output.read_text(encoding="utf-8").startswith("<svg"), "Expected .svg file to hold svg text"
-        

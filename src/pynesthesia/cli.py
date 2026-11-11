@@ -7,6 +7,7 @@ import pynesthesia.hashseed as hashseed
 import pynesthesia.jingle as jingle
 import pynesthesia.htmlgen as htmlgen
 import pynesthesia.chiptune as chiptune
+import pynesthesia.flower as flower
 
 def jingle_from_file(path, measures=jingle.jingle_config["measuresDefault"]):
     """create an mp3 from a file"""
@@ -46,6 +47,18 @@ def chiptune_from_file(path, bars=4, wave="square"):
         output.write_bytes(chiptune.create_chiptune(seed, bars=bars, wave_type=wave))
         print(f"chiptune saved to: {output}")
 
+def flower_from_file(path):
+    """Create an SVG flower picture from a file"""
+    seed = hashseed.generate_file_hash(path)
+    if seed is not None:
+        species, style = flower.choose_flower(seed)
+        directory = Path.cwd() / "pynesthesia_output" / "flower"
+        directory.mkdir(parents=True, exist_ok=True)
+    
+        output = directory / f"{species}_{style}_{seed[:12]}.svg"
+        flower.svg_to_file(seed, output)
+        print(f"SVG saved to: {output}")
+
 def colorize_text(text):
     """print each character in its color"""
     print(colors.colorize(text))
@@ -59,11 +72,14 @@ def run_html(args):
 def run_chiptune(args):
     chiptune_from_file(args.path, args.bars, args.wave)
 
+def run_flower(args):
+    flower_from_file(args.path)
+
 def main(argv=None):
     # set up the command line options
     parser = argparse.ArgumentParser(description="create a jingle or color text")
     parser.add_argument("--colorize", help="text to print in color")
-    commands = parser.add_subparsers(dest="command")\
+    commands = parser.add_subparsers(dest="command")
 
     jingle_parser = commands.add_parser("jingle", help="create a jingle from a file")
     jingle_parser.add_argument("path", help="absolute path to a file")
@@ -84,6 +100,10 @@ def main(argv=None):
         help="melody sound (default: %(default)s)",
     )
     chiptune_parser.set_defaults(handler = run_chiptune)
+
+    flower_parser = commands.add_parser("flower", help="create an svg flower from a file")
+    flower_parser.add_argument("path", help="absolute path to a file")
+    flower_parser.set_defaults(handler= run_flower)
 
     # limit the jingle to five minutes
     minimum, maximum = jingle.jingle_config["measuresLimits"]

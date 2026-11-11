@@ -63,7 +63,9 @@ def test_invalid_commands(tmp_path):
         ["jingle", file, "--measures", "113"],
         ["--colorize", "0f", "jingle", file],
         ["html"],
-        ["html", "relative.txt"]
+        ["html", "relative.txt"],
+        ["flower"],
+        ["flower", "relative.txt"]
     ]
     for command in commands:
         # argparse uses exit code 2 for errors
@@ -240,3 +242,38 @@ def test_cannot_save_chiptune(working_directory, capsys):
 
     assert error.value.code == 2
     assert "could not save output" in capsys.readouterr().err
+
+def test_flower_from_file(working_directory, capsys):
+    """Check that a file creates an svg flower"""
+    file = working_directory / "flower_test.txt"
+    file.write_bytes(b"hello")
+    cli.main(["flower", str(file)])
+    outputs = list(
+        (working_directory / "pynesthesia_output" / "flower").glob("*.svg")
+    )
+
+    assert len(outputs) == 1
+    assert outputs[0].stat().st_size > 0
+    assert outputs[0].read_text(encoding="utf-8").startswith("<svg") 
+    assert str(outputs[0]) in capsys.readouterr().out
+
+def test_flower_is_repeatable(working_directory):
+    """Check that the same input file gives the same svg flower"""
+    file = working_directory / "same_flower.txt"
+    file.write_bytes(b"hello")
+    cli.main(["flower", str(file)])
+    directory = working_directory / "pynesthesia_output" / "flower"
+    output = next(directory.glob("*.svg"))
+    first_svg = output.read_bytes()
+
+    cli.main(["flower", str(file)])
+
+    assert list(directory.glob("*.svg")) == [output]
+    assert output.read_bytes() == first_svg
+
+def test_flower_with_missing_file(working_directory, capsys):
+    """Check that a missing file creates no svg flower"""
+    cli.main(["flower", str(working_directory / "missing_flower.txt")])
+
+    assert "Error processing file" in capsys.readouterr().out
+    assert not (working_directory / "pynesthesia_output").exists()
