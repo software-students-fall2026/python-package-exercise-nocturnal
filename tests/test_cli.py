@@ -61,7 +61,7 @@ def test_invalid_commands(tmp_path):
         [], ["jingle"], ["jingle", "relative.txt"],
         ["jingle", file, "--measures", "0"],
         ["jingle", file, "--measures", "113"],
-        ["--colorize", "0f", "jingle", file],
+        ["colorize"],
         ["html"],
         ["html", "relative.txt"],
         ["flower"],
@@ -71,13 +71,11 @@ def test_invalid_commands(tmp_path):
         ["chiptune", file, "--bars", "0"],
         ["chiptune", file, "--bars", "33"],
         ["chiptune", file, "--wave", "kazoo"],
-        ["--colorize", "0f", "chiptune", file],
         ["retro"],
         ["retro", "relative.txt"],
         ["retro", file, "--bars", "0"],
         ["retro", file, "--bars", "33"],
         ["retro", file, "--wave", "square"],
-        ["--colorize", "0f", "retro", file]
     ]
     for command in commands:
         # argparse uses exit code 2 for errors
@@ -87,17 +85,15 @@ def test_invalid_commands(tmp_path):
         assert error.value.code == 2
 
 
-def test_cannot_save_jingle(working_directory, capsys):
+def test_cannot_save_jingle(working_directory, capsys, monkeypatch):
     """check that a save error is reported"""
     file = working_directory / "input.txt"
     file.write_bytes(b"hello")
 
-    # remove the current directory first
-    # this prevents saving the output
-    directory = working_directory / "removed"
-    directory.mkdir()
-    os.chdir(directory)
-    directory.rmdir()
+    # Simulate save error without changing the working directory
+    def fail_save(*args, **kwargs):
+        raise OSError("permission denied")
+    monkeypatch.setattr(cli.output_writer, "save_mp3", fail_save)
 
     with pytest.raises(SystemExit) as error:
         cli.main(["jingle", str(file)])
@@ -166,7 +162,7 @@ def test_html_with_missing_file(working_directory, capsys):
 
 def test_cli_colorizes(capsys):
     """check that colorize prints colored text"""
-    cli.main(["--colorize", "0f"])
+    cli.main(["colorize", "0f"])
 
     assert capsys.readouterr().out.strip() == colors.colorize("0f")
 
@@ -218,6 +214,22 @@ def test_chiptune_with_missing_file(working_directory, capsys):
     assert "Error processing file" in capsys.readouterr().out
     assert not (working_directory / "pynesthesia_output").exists()
 
+def test_cannot_save_chiptune(working_directory, capsys, monkeypatch):
+    """check that a chiptune save error is reported"""
+    file = working_directory / "input.txt"
+    file.write_bytes(b"hello")
+
+    # Simulate save error without changing the working directory
+    def fail_write(*args, **kwargs):
+        raise OSError("permission denied")
+
+    monkeypatch.setattr(Path, "write_bytes", fail_write)
+
+    with pytest.raises(SystemExit) as error:
+        cli.main(["chiptune", str(file)])
+
+    assert error.value.code == 2
+    assert "could not save output" in capsys.readouterr().err
 
 def test_flower_from_file(working_directory, capsys):
     """Check that a file creates an svg flower"""

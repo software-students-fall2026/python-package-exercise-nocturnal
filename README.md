@@ -125,9 +125,9 @@ pynesthesia chiptune /absolute/path/to/file.txt --bars 8 --wave saw
 pynesthesia html /absolute/path/to/file.txt
 ```
 
-- `--colorize`: text to print in color
+- `colorize`: text to print in color
 ```bash
-pynesthesia --colorize 2cf24dba5fb0a30e
+pynesthesia colorize 2cf24dba5fb0a30e
 ```
 
 ## Configuration
