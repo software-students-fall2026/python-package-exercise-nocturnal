@@ -1,3 +1,5 @@
+from pathlib import Path
+
 Species = {
     #number of petals, layers, petal radius of width + length (pixel), radius of center (pixel)
     "sunflower": {
@@ -162,3 +164,8 @@ def render_flower_svg(seed_hash: str)-> str:
     svg += "</svg>"
     return svg
 
+def svg_to_file(seed_hash: str, filename: str = "flower.svg") -> str:
+    """save svg text of hash into a .svg file"""
+    svg = render_flower_svg(seed_hash)
+    Path(filename).write_text(svg, encoding="utf-8")
+    return filename
