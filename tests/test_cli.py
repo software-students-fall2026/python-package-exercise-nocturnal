@@ -89,7 +89,7 @@ def test_cannot_save_jingle(working_directory, capsys):
         cli.main(["jingle", str(file)])
 
     assert error.value.code == 2
-    assert "could not save jingle" in capsys.readouterr().err
+    assert "could not save output" in capsys.readouterr().err
 
 def test_html_from_file(working_directory, capsys):
     """Check that a file creates an html page"""
