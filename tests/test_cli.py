@@ -30,7 +30,6 @@ def test_jingle_from_file(working_directory, capsys):
     assert "_measures-1.mp3" in outputs[0].name
     assert str(outputs[0]) in capsys.readouterr().out
 
-
 def test_jingle_is_repeatable(working_directory):
     """check that the same file makes the same mp3"""
     file = working_directory / "same_file_bro.txt"
@@ -63,6 +62,8 @@ def test_invalid_commands(tmp_path):
         ["jingle", file, "--measures", "0"],
         ["jingle", file, "--measures", "113"],
         ["--colorize", "0f", "jingle", file],
+        ["html"],
+        ["html", "relative.txt"]
     ]
     for command in commands:
         # argparse uses exit code 2 for errors
@@ -88,7 +89,65 @@ def test_cannot_save_jingle(working_directory, capsys):
         cli.main(["jingle", str(file)])
 
     assert error.value.code == 2
-    assert "could not save jingle" in capsys.readouterr().err
+    assert "could not save output" in capsys.readouterr().err
+
+def test_html_from_file(working_directory, capsys):
+    """Check that a file creates an html page"""
+    file = working_directory / "html_test.txt"
+    file.write_bytes(b"hello")
+    cli.main(["html", str(file)])
+    outputs = list(
+        (working_directory / "pynesthesia" / "fortunes").glob("*.html")
+    )
+
+    assert len(outputs) == 1
+    assert outputs[0].stat().st_size > 0
+    assert len(outputs[0].stem) == 12
+    assert str(outputs[0]) in capsys.readouterr().out
+
+    page = outputs[0].read_text(encoding="utf-8")
+
+    assert "Yesterday's Fortune" in page
+    assert "Today's Fortune" in page
+    assert "Tomorrow's Fortune" in page
+
+def test_html_is_repeatable(working_directory):
+    """Check that the same input file gives the same html page"""
+    file = working_directory / "html_test.txt"
+    file.write_bytes(b"hello")
+    cli.main(["html", str(file)])
+    directory = working_directory / "pynesthesia" / "fortunes"
+    output = next(directory.glob("*.html"))
+    first_page = output.read_bytes()
+
+    cli.main(["html", str(file)])
+
+    assert list(directory.glob("*.html")) == [output]
+    assert output.read_bytes() == first_page
+
+def test_different_files_make_different_html_names(working_directory):
+    """Check that different files get different output names"""
+    first_file = working_directory / "first.txt"
+    second_file = working_directory / "second.txt"
+    first_file.write_bytes(b"hello")
+    second_file.write_bytes(b"goodbye")
+
+    cli.main(["html", str(first_file)])
+    cli.main(["html", str(second_file)])
+
+    outputs = list(
+        (working_directory / "pynesthesia" / "fortunes").glob("*.html")
+    )
+
+    assert len(outputs) == 2
+    assert outputs[0].name != outputs[1].name
+
+def test_html_with_missing_file(working_directory, capsys):
+    """Check that a missing file creates no fortune page."""
+    cli.main(["html", str(working_directory / "missing_file.txt")])
+
+    assert "Error processing file" in capsys.readouterr().out
+    assert not (working_directory / "pynesthesia").exists()
 
 
 def test_cli_colorizes(capsys):
